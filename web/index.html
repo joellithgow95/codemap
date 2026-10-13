@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>dash // codemap</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <canvas id="scene"></canvas>
+  <div id="crosshair" hidden></div>
+
+  <header id="hud-title">
+    <div class="brand">DASH<span>//</span>CODEMAP</div>
+    <div id="repo-meta" class="dim"></div>
+  </header>
+
+  <nav id="hud-views">
+    <div class="group-label">VIEW</div>
+    <div id="view-buttons"></div>
+    <div class="group-label">LENS</div>
+    <div id="lens-buttons"></div>
+    <div class="group-label">MODE</div>
+    <button id="fly-toggle" class="chip">FLY <kbd>F</kbd></button>
+    <button id="menu-open" class="chip">MENU <kbd>Esc</kbd></button>
+  </nav>
+
+  <aside id="hud-changes">
+    <div class="group-label" id="changes-title">CHANGES</div>
+    <div id="changes-list"></div>
+  </aside>
+
+  <aside id="hud-legend"></aside>
+
+  <footer id="hud-timeline">
+    <button id="play" class="chip">▶</button>
+    <div id="timeline-track">
+      <input id="timeline" type="range" min="0" value="0" step="1" />
+      <div id="ticks"></div>
+    </div>
+    <div id="commit-info"></div>
+  </footer>
+
+  <div id="loading">
+    <div class="brand">DASH<span>//</span>CODEMAP</div>
+    <div id="loading-text">loading</div>
+    <div id="loading-track"><div id="loading-bar"></div></div>
+  </div>
+
+  <div id="tooltip" hidden></div>
+  <div id="toast" hidden></div>
+
+  <section id="panel" class="closed">
+    <div id="panel-head">
+      <div id="panel-path"></div>
+      <button id="panel-close" class="chip">✕</button>
+    </div>
+    <div id="panel-meta"></div>
+    <div id="panel-tabs">
+      <button data-tab="code" class="active">CODE</button>
+      <button data-tab="history">HISTORY</button>
+      <button data-tab="symbols">SYMBOLS</button>
+    </div>
+    <div id="panel-body"></div>
+  </section>
+
+  <div id="menu" hidden>
+    <div class="menu-card">
+      <h1>DASH<span>//</span>CODEMAP</h1>
+      <div class="menu-grid">
+        <div>
+          <h2>Views</h2>
+          <div id="menu-views"></div>
+          <h2>Lens</h2>
+          <div id="menu-lenses"></div>
+          <h2>Codebase</h2>
+          <div id="menu-repos"></div>
+          <h2>Load from GitHub</h2>
+          <button id="gh-signin" class="chip wide" hidden>SIGN IN WITH GITHUB</button>
+          <input id="gh-input" class="field" placeholder="owner/name or github.com URL" autocomplete="off" spellcheck="false" />
+          <input id="gh-token" class="field" type="password" autocomplete="off" />
+          <select id="gh-limit" class="field">
+            <option value="25">last 25 commits</option>
+            <option value="50" selected>last 50 commits</option>
+            <option value="100">last 100 commits</option>
+          </select>
+          <button id="gh-load" class="chip wide">LOAD REPO</button>
+          <button id="gh-clear" class="chip wide" hidden>SIGN OUT / FORGET TOKEN</button>
+          <div class="dim note">Tokens stay in this tab and are only sent to api.github.com.</div>
+          <h2>Data</h2>
+          <button id="rescan" class="chip wide">RESCAN REPO</button>
+          <div id="rescan-status" class="dim"></div>
+        </div>
+        <div>
+          <h2>Controls</h2>
+          <table class="keys">
+            <tr><td>Left drag</td><td>orbit</td></tr>
+            <tr><td>Right drag / Shift+drag</td><td>pan</td></tr>
+            <tr><td>Wheel</td><td>zoom</td></tr>
+            <tr><td>Click</td><td>select file, open code</td></tr>
+            <tr><td>Double click</td><td>fly camera to file</td></tr>
+            <tr><td><kbd>F</kbd></td><td>free-fly (WASD, Q/E, Shift = fast)</td></tr>
+            <tr><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></td><td>city / graph / strata</td></tr>
+            <tr><td><kbd>L</kbd></td><td>cycle lens</td></tr>
+            <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>step commit</td></tr>
+            <tr><td><kbd>Space</kbd></td><td>play history</td></tr>
+            <tr><td><kbd>/</kbd></td><td>search files</td></tr>
+            <tr><td><kbd>Esc</kbd></td><td>menu / close panel</td></tr>
+          </table>
+        </div>
+      </div>
+      <button id="menu-resume" class="chip wide big">RESUME</button>
+    </div>
+  </div>
+
+  <div id="search" hidden>
+    <input id="search-input" placeholder="jump to file…" autocomplete="off" />
+    <div id="search-results"></div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

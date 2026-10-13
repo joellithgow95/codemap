@@ -1,0 +1,10 @@
+web/node_modules/
+web/dist/
+web/local-maps/
+web/.env
+web/.env.*
+!web/.env.example
+
+# Local Netlify folder
+.netlify
+.netlify/

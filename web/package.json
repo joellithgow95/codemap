@@ -1,0 +1,16 @@
+{
+  "name": "dash-codemap",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "scan": "python3 -I ../scan/scan.py",
+    "demo": "node scripts/make-demo.mjs"
+  },
+  "dependencies": {
+    "three": "^0.186.1",
+    "vite": "^8.3.4"
+  }
+}

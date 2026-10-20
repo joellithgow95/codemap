@@ -25,9 +25,27 @@
     <button id="menu-open" class="chip">MENU <kbd>Esc</kbd></button>
   </nav>
 
-  <aside id="hud-changes">
-    <div class="group-label" id="changes-title">CHANGES</div>
-    <div id="changes-list"></div>
+  <aside id="hud-tree">
+    <div id="tree-head">
+      <div class="group-label" id="tree-title">CHANGES</div>
+      <button id="tree-filter" class="chip" title="show only changed files, or the whole tree">CHANGED</button>
+    </div>
+    <div id="tree-crumbs"></div>
+    <div id="tree-list"></div>
+  </aside>
+
+  <aside id="hud-camera">
+    <div id="camera-buttons">
+      <button class="chip" data-preset="top" title="top-down map (orthographic)">TOP <kbd>T</kbd></button>
+      <button class="chip" data-preset="iso" title="three-quarter view">ISO <kbd>I</kbd></button>
+      <button class="chip" data-preset="front" title="look from the front">FRONT</button>
+      <button class="chip" data-preset="side" title="look from the side">SIDE</button>
+      <button class="chip" id="cam-frame" title="frame the selected file, else the focused folder">FRAME <kbd>.</kbd></button>
+      <button class="chip" id="cam-ortho" title="orthographic / perspective">ORTHO <kbd>O</kbd></button>
+      <button class="chip" id="cam-reset" title="back to the whole repo, three-quarter view">RESET <kbd>Home</kbd></button>
+      <div id="cam-hint" class="dim">drag <b>orbit</b> · right-drag <b>pan</b></div>
+    </div>
+    <div id="gizmo" title="click an axis to look along it"></div>
   </aside>
 
   <aside id="hud-legend"></aside>
@@ -94,11 +112,17 @@
         <div>
           <h2>Controls</h2>
           <table class="keys">
-            <tr><td>Left drag</td><td>orbit</td></tr>
-            <tr><td>Right drag / Shift+drag</td><td>pan</td></tr>
+            <tr><td>Left drag</td><td>orbit (top-down map: pan)</td></tr>
+            <tr><td>Right drag / Shift+drag</td><td>pan (top-down map: rotate)</td></tr>
             <tr><td>Wheel</td><td>zoom</td></tr>
             <tr><td>Click</td><td>select file, open code</td></tr>
-            <tr><td>Double click</td><td>fly camera to file</td></tr>
+            <tr><td>Double click</td><td>focus the file's folder (again: fly to the file)</td></tr>
+            <tr><td>Click folder label</td><td>focus that folder</td></tr>
+            <tr><td><kbd>Backspace</kbd></td><td>focus up one folder</td></tr>
+            <tr><td><kbd>T</kbd> <kbd>I</kbd></td><td>top-down map / three-quarter view</td></tr>
+            <tr><td><kbd>.</kbd></td><td>frame selection or focused folder</td></tr>
+            <tr><td><kbd>O</kbd></td><td>orthographic / perspective</td></tr>
+            <tr><td><kbd>Home</kbd></td><td>reset: whole repo, three-quarter view</td></tr>
             <tr><td><kbd>F</kbd></td><td>free-fly (WASD, Q/E, Shift = fast)</td></tr>
             <tr><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></td><td>city / graph / strata</td></tr>
             <tr><td><kbd>L</kbd></td><td>cycle lens</td></tr>

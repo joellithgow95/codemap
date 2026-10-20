@@ -50,3 +50,17 @@ Local dev: copy `web/.env.example` to `web/.env.local`; `npm run dev` serves the
 Lenses (L): change (what the selected commit touched, or the working tree), language, churn, age.
 The timeline scrubs commits; the last stop is the uncommitted working tree. Click a tower for the
 code panel (blame gutter, dirty lines, history diffs, symbols); selected files draw import arcs.
+
+## Camera and focus
+
+The camera HUD (bottom right) has presets: TOP (`T`, an orthographic top-down map that turns back
+into perspective once you orbit away), ISO (`I`), FRONT, SIDE, FRAME (`.`), ORTHO (`O`, sticky) and
+RESET (`Home`). The axis gizmo next to it swings the camera to look along the clicked axis.
+Looking straight down orthographically, the mouse works like a map: left-drag pans, right-drag
+rotates (tilting far enough leaves the map). Everywhere else left-drag orbits and right-drag pans.
+
+The top-left panel is the folder tree at the current commit, each folder showing how many of its
+files were added, modified or deleted (CHANGED hides the untouched ones). Click a folder name in the
+tree, a folder label in the scene, or double-click a tower to focus its folder. The rest of the city
+slides away and fades, and the presets frame the focused folder. `Backspace` or the breadcrumb goes
+back up.

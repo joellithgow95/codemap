@@ -95,19 +95,27 @@ function weight(f) {
   return Math.pow(Math.max(f.maxLoc, 8), 0.7)
 }
 
-export function layoutCity(files) {
-  const root = { name: '', children: new Map(), files: [] }
+export function buildTree(files) {
+  const root = { name: '', path: '', depth: 0, children: new Map(), files: [] }
   files.forEach((f) => {
     let node = root
     f.dir
       .split('/')
       .filter(Boolean)
       .forEach((part) => {
-        if (!node.children.has(part)) node.children.set(part, { name: part, children: new Map(), files: [] })
+        if (!node.children.has(part)) {
+          const path = node.path ? `${node.path}/${part}` : part
+          node.children.set(part, { name: part, path, depth: node.depth + 1, children: new Map(), files: [] })
+        }
         node = node.children.get(part)
       })
     node.files.push(f)
   })
+  return root
+}
+
+export function layoutCity(files) {
+  const root = buildTree(files)
 
   const total = (node) =>
     node.files.reduce((s, f) => s + weight(f), 0) + [...node.children.values()].reduce((s, c) => s + total(c), 0)
@@ -154,7 +162,7 @@ export function layoutCity(files) {
 
   const side = Math.max(48, Math.sqrt(total(root)) * 2.4)
   place(root, '', -side / 2, -side / 2, side, side, 0)
-  return { districts, size: side }
+  return { districts, size: side, tree: root }
 }
 
 export function layoutGraph(files) {

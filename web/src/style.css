@@ -32,13 +32,35 @@ body.panel-open #hud-views { right: calc(min(46vw, 760px) + 16px); }
 .group-label { color: var(--magenta); font-size: 10px; letter-spacing: 0.2em; margin-top: 8px; }
 #view-buttons, #lens-buttons { display: flex; flex-direction: column; gap: 3px; }
 
-#hud-changes { position: fixed; top: 64px; left: 16px; width: 270px; max-height: 38vh; overflow: auto; background: var(--panel); border: 1px solid var(--line); padding: 8px; }
-#hud-changes .group-label { margin-top: 0; }
-.change-row { display: flex; gap: 6px; cursor: pointer; padding: 2px 0; white-space: nowrap; overflow: hidden; }
-.change-row:hover { color: #fff; }
-.change-row .tag { width: 14px; text-align: center; flex: none; }
-.change-row .nm { overflow: hidden; text-overflow: ellipsis; flex: 1; }
-.change-row .dl { flex: none; opacity: 0.8; }
+#hud-tree { position: fixed; top: 64px; left: 16px; width: 290px; max-height: 46vh; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); padding: 8px; }
+#tree-head { display: flex; align-items: center; gap: 6px; flex: none; }
+#tree-head .group-label { margin-top: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#tree-filter { padding: 1px 6px; font-size: 10px; }
+#tree-crumbs { flex: none; margin: 5px 0 4px; padding-bottom: 4px; border-bottom: 1px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#tree-crumbs span { cursor: pointer; color: var(--cyan); }
+#tree-crumbs span:hover { color: #fff; text-decoration: underline; }
+#tree-crumbs span.here { color: #fff; cursor: default; text-decoration: none; }
+#tree-list { overflow: auto; flex: 1; min-height: 0; }
+.tree-row { display: flex; gap: 6px; cursor: pointer; padding: 1px 0 1px calc(var(--depth, 0) * 12px); white-space: nowrap; overflow: hidden; }
+.tree-row:hover { color: #fff; background: rgba(0, 240, 255, 0.06); }
+.tree-row.sel { color: #fff; background: rgba(0, 240, 255, 0.14); }
+.tree-row.dir .nm { color: var(--magenta); }
+.tree-row .caret, .tree-row .tag { width: 14px; text-align: center; flex: none; }
+.tree-row .caret { opacity: 0.7; }
+.tree-row .caret:hover { opacity: 1; color: #fff; }
+.tree-row .nm { overflow: hidden; text-overflow: ellipsis; flex: 1; }
+.tree-row .dl { flex: none; opacity: 0.8; }
+
+/* Click-through so the canvas under #gizmo gets the axis clicks; only the buttons take pointer input. */
+#hud-camera { position: fixed; right: 16px; bottom: 88px; display: flex; align-items: flex-end; gap: 8px; transition: right 0.25s; pointer-events: none; }
+#camera-buttons { pointer-events: auto; }
+body.panel-open #hud-camera { right: calc(min(46vw, 760px) + 16px); }
+#camera-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; background: var(--panel); border: 1px solid var(--line); padding: 6px; }
+#camera-buttons .chip { padding: 3px 6px; font-size: 10px; text-align: left; }
+#camera-buttons #cam-reset, #cam-hint { grid-column: span 2; }
+#cam-hint { font-size: 10px; text-align: center; padding-top: 2px; }
+#cam-hint b { color: var(--cyan); font-weight: normal; }
+#gizmo { width: 128px; height: 128px; flex: none; border: 1px solid var(--line); border-radius: 50%; pointer-events: none; }
 .add { color: var(--green); } .mod { color: var(--amber); } .del { color: var(--red); } .new { color: var(--green); }
 
 #hud-legend { position: fixed; left: 16px; bottom: 88px; background: var(--panel); border: 1px solid var(--line); padding: 8px; max-width: 270px; }
@@ -62,7 +84,8 @@ body.panel-open #hud-timeline { right: calc(min(46vw, 760px) + 16px); }
 #crosshair[hidden], [hidden] { display: none !important; }
 
 .label { color: var(--cyan); font-size: 10px; letter-spacing: 0.12em; text-shadow: 0 0 6px #000, 0 0 6px #000; white-space: nowrap; opacity: 0.85; }
-.label.dir { color: var(--magenta); font-size: 11px; }
+.label.dir { color: var(--magenta); font-size: 11px; pointer-events: auto; cursor: pointer; }
+.label.dir:hover, .label.dir.hot { color: #fff; text-shadow: 0 0 8px var(--magenta); }
 .label.sel { color: #fff; font-size: 12px; opacity: 1; text-shadow: 0 0 8px var(--cyan); }
 
 #panel { position: fixed; top: 0; right: 0; bottom: 0; width: min(46vw, 760px); background: var(--panel); border-left: 1px solid var(--cyan); box-shadow: -10px 0 40px rgba(0, 240, 255, 0.12); display: flex; flex-direction: column; transition: transform 0.25s; z-index: 10; backdrop-filter: blur(6px); }

@@ -145,9 +145,9 @@ body.panel-open #hud-timeline { right: calc(min(46vw, 760px) + 16px); }
 .repo-row .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .repo-row .tag { color: var(--magenta); font-size: 10px; letter-spacing: 0.1em; }
 
-#gh-section { margin-top: 14px; }
-#gh-section summary { cursor: pointer; color: var(--magenta); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; }
-#gh-section summary:hover { color: #fff; }
+#gh-section, #local-section { margin-top: 14px; }
+#gh-section summary, #local-section summary { cursor: pointer; color: var(--magenta); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; }
+#gh-section summary:hover, #local-section summary:hover { color: #fff; }
 
 .keys-card { width: min(860px, 94vw); }
 .keys-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0 28px; overflow: auto; }

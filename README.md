@@ -1,8 +1,8 @@
 # CodeMap
 
 A 3D, Tron-style map of a git repository. Files are towers, folders are districts, and the commit
-history is a timeline you can scrub or play. Load any public GitHub repo in the browser, or scan a
-local checkout.
+history is a timeline you can scrub or play. Load any public GitHub repo in the browser, open a
+folder from your own disk, or scan a local checkout.
 
 **Live:** https://codemap-3d.netlify.app · Try a repo: `https://codemap-3d.netlify.app/?gh=owner/name`
 
@@ -74,6 +74,22 @@ an hour. A token (sign in, or paste one) raises that to 5,000 and reaches privat
 Tokens are kept in the tab's `sessionStorage` and sent only to `api.github.com`. The live site's
 Content-Security-Policy only lets the page talk to itself, the GitHub API and the raw-content
 host.
+
+### Open a local folder
+
+Menu → Open a local folder, or open `?local&n=50`, then CHOOSE FOLDER. This works the same on the
+live site and under `npm run dev`, with no scan step: the browser's folder picker hands the files
+to the page and everything is read inside the tab. **Nothing is uploaded**, and the CSP would block
+the page from sending the files anywhere but GitHub.
+
+History comes from the folder's own `.git`: the last `n` commits on the current branch's
+first-parent line (a merge shows everything it brought in), with their diffs, and the working
+tree's dirty lines against HEAD. The file list follows the folder's `.gitignore` files and
+`.git/info/exclude`, and skips nested repositories as git does. Your global ignore file
+(`~/.config/git/ignore`) sits outside the folder, so it isn't applied. Compared with the scanner
+there is no blame, renames are found only when the contents are identical, and a worktree or
+submodule (where `.git` is a pointer file) opens without history. Chrome, Edge and Arc read the folder lazily. Firefox and Safari read every file in it up
+front, `node_modules` included, so use Chrome for big repos.
 
 ## Deploy your own (Netlify)
 

@@ -11,6 +11,7 @@ import { LANG_COLORS, buildModel, existsAt, layoutCity, layoutGraph, locAt, stat
 import { highlightLines } from './highlight.js'
 import { extractSymbols } from './parse.js'
 import { GithubError, fetchText, loadGithub, parseRepoSpec } from './github.js'
+import { LocalError, loadLocal, pickFolder } from './local.js'
 
 const $ = (id) => document.getElementById(id)
 // Escapes for text and for quoted attributes: repo paths and commit text come from arbitrary GitHub
@@ -104,7 +105,35 @@ async function readManifest(url, base) {
   }
 }
 
+// The folder picker only opens on a click, so ?local waits on a button. Closing the picker
+// without choosing shows the button again.
+async function chooseFolder() {
+  $('loading').hidden = false
+  $('loading-bar').style.width = '0%'
+  $('loading-text').innerHTML =
+    'Pick a folder to map. Its files and .git are read inside this tab and never leave your computer.' +
+    `<br><br><button id="pick-folder" class="chip">CHOOSE FOLDER</button> <a class="chip" href="${esc(location.pathname)}">BACK</a>`
+  for (;;) {
+    await new Promise((resolve) => ($('pick-folder').onclick = resolve))
+    try {
+      return await pickFolder()
+    } catch (error) {
+      if (error.name !== 'AbortError') throw error
+    }
+  }
+}
+
 async function loadSource() {
+  if (params.has('local')) {
+    try {
+      const folder = await chooseFolder()
+      showLoading(`opening ${folder.name}`)
+      const doc = await loadLocal(folder, { commitLimit: Number(params.get('n') ?? 50), onProgress: showLoading })
+      return { doc, ctx: null, name: doc.repo, manifest: await loadManifests() }
+    } catch (error) {
+      await stall(error instanceof LocalError ? error.message : `Load failed: ${error.message}`)
+    }
+  }
   const spec = params.get('gh')
   if (spec) {
     showLoading('connecting to GitHub')
@@ -120,7 +149,7 @@ async function loadSource() {
     }
   }
   const manifest = await loadManifests()
-  if (!manifest.length) await stall('No maps found. Run `npm run scan -- <repo>` or load a GitHub repo from the menu.')
+  if (!manifest.length) await stall('No maps found. Run `npm run scan -- <repo>`, or load a GitHub repo or a local folder from the menu.')
   const requested = params.get('repo')
   const entry = manifest.find((m) => m.name === requested) ?? manifest[0]
   showLoading(`loading ${entry.name}`)
@@ -1205,7 +1234,7 @@ function toast(msg) {
 
 $('current-name').textContent = repoName
 $('current-meta').textContent = `${model.data.branch} @ ${model.data.head} · ${files.length} files · ${count} commits${model.data.truncated ? ' (latest)' : ''}`
-if (ghCtx) $('rescan').hidden = true
+if (ghCtx || model.data.source === 'local') $('rescan').hidden = true
 
 // The filter only appears once the list is long enough to need it.
 const REPO_FILTER_MIN = 7
@@ -1245,6 +1274,7 @@ $('gh-load').onclick = () => {
   location.search = `?gh=${encodeURIComponent(target)}&n=${$('gh-limit').value}`
 }
 $('gh-input').addEventListener('keydown', (e) => e.key === 'Enter' && $('gh-load').click())
+$('local-open').onclick = () => (location.search = `?local&n=${$('local-limit').value}`)
 
 function toggleMenu(open) {
   $('menu').hidden = !open

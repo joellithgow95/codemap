@@ -112,6 +112,17 @@
           <button id="gh-clear" class="chip wide" hidden>SIGN OUT / FORGET TOKEN</button>
           <div class="dim note">Tokens stay in this tab and are only sent to api.github.com.</div>
         </details>
+        <details id="local-section">
+          <summary>Open a local folder…</summary>
+          <select id="local-limit" class="field">
+            <option value="25">last 25 commits</option>
+            <option value="50" selected>last 50 commits</option>
+            <option value="100">last 100 commits</option>
+            <option value="250">last 250 commits</option>
+          </select>
+          <button id="local-open" class="chip wide">OPEN FOLDER</button>
+          <div class="dim note">Read in this tab through your browser's folder picker; nothing is uploaded. History comes from the folder's .git.</div>
+        </details>
       </div>
       <div class="menu-foot">
         <button id="menu-keys" class="chip">KEYS <kbd>?</kbd></button>

@@ -3,13 +3,13 @@
 <!-- KEEP THIS FILE IN SYNC: update the map and the hard rules whenever a directory, command or rule changes. -->
 
 CodeMap renders a git repository as a 3D city (Three.js + Vite, no UI framework). A repo becomes a
-**map document** (one JSON file) from one of two producers. The browser app renders whichever it
+**map document** (one JSON file) from one of three producers. The browser app renders whichever it
 gets.
 
 ```
-local checkout ─ scan/scan.py ─┐
-                                ├─> map document (JSON) ─> web/src/main.js (Three.js scene + HUD)
-GitHub repo ─ web/src/github.js ┘
+local checkout ─ scan/scan.py ──────┐
+GitHub repo ─ web/src/github.js ────┼─> map document (JSON) ─> web/src/main.js (Three.js scene + HUD)
+picked folder ─ web/src/local.js ───┘   (reads the folder's .git in the tab via web/src/git.js)
 ```
 
 ## Map
@@ -18,7 +18,7 @@ GitHub repo ─ web/src/github.js ┘
 |------|------|-----------|
 | `scan/` | Python scanner for a local checkout (stdlib only) | [`scan/AGENTS.md`](scan/AGENTS.md) |
 | `web/` | The app: Vite config, dev-server endpoints, npm scripts, demo maps | [`web/AGENTS.md`](web/AGENTS.md) |
-| `web/src/` | App source: scene, HUD, GitHub loader, parsers, highlighter | [`web/src/AGENTS.md`](web/src/AGENTS.md) |
+| `web/src/` | App source: scene, HUD, GitHub and local-folder loaders, git reader, parsers, highlighter | [`web/src/AGENTS.md`](web/src/AGENTS.md) |
 | `web/netlify/functions/` | The one server-side piece: GitHub OAuth code → token exchange | [`web/netlify/functions/AGENTS.md`](web/netlify/functions/AGENTS.md) |
 | `netlify.toml` | Build, publish dir, functions dir, security headers and CSP | this file |
 | `docs/` | README screenshots (taken from public demo maps only) | |
@@ -50,14 +50,18 @@ scanner. Check behaviour by running the app.
   escaping. Never interpolate raw repo text.
 - **The CSP is a contract.** A new network host, inline script, worker or font source needs a
   matching change to the `Content-Security-Policy` in `netlify.toml`.
-- **Both producers emit the same document.** A field added to the map document is added in
-  `scan/scan.py` and `web/src/github.js` alike (see `web/src/AGENTS.md` for the shape).
+- **All producers emit the same document.** A field added to the map document is added in
+  `scan/scan.py`, `web/src/github.js` and `web/src/local.js` alike (see `web/src/AGENTS.md` for
+  the shape).
+- **Picked folders stay in the tab.** `local.js` reads files through the browser's folder picker
+  and never sends them anywhere; the CSP's `connect-src` backs that up.
 - **Tokens stay in the tab.** The GitHub token goes only to `api.github.com`, is never logged and is
   never persisted beyond `sessionStorage`.
 - **Demo maps are third-party content.** Only public repos whose license allows redistribution,
   each with a row in `THIRD_PARTY_NOTICES.md`.
 - **No new dependencies without a license check.** Permissive licenses only (MIT, Apache-2.0, BSD,
-  ISC). The app has one runtime dependency (three) on purpose.
+  ISC). The app has two runtime dependencies on purpose: three, and diff (jsdiff, BSD-3-Clause)
+  for the local loader's line diffs.
 
 ## Conventions
 

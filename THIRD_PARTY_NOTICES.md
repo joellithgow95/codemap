@@ -21,4 +21,5 @@ redistribution.
 | Package | License |
 |---------|---------|
 | [three](https://github.com/mrdoob/three.js) | MIT |
+| [diff](https://github.com/kpdecker/jsdiff) (jsdiff, local-folder line diffs) | BSD-3-Clause |
 | [vite](https://github.com/vitejs/vite) (build tool) | MIT |

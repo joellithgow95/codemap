@@ -1,14 +1,22 @@
-import { buildResolver, extractImports, extractSymbols, langOf, parsesSymbols } from './parse.js'
+import {
+  BINARY_EXT,
+  DATA_EXT,
+  MAX_PATCH_LINES,
+  MAX_TEXT_BYTES,
+  MAX_TREE_FILES,
+  buildResolver,
+  countLines,
+  extractImports,
+  extractSymbols,
+  langOf,
+  parsesSymbols,
+  pool,
+  wantsText,
+} from './parse.js'
 
 const API = 'https://api.github.com'
 const RAW = 'https://raw.githubusercontent.com'
-const BINARY_EXT = /\.(png|jpe?g|gif|ico|webp|woff2?|ttf|otf|pdf|zip|gz|tar|pkl|xlsx|lock|mp[34]|mov|wasm|so|dylib|bin)$/i
-const DATA_EXT = /\.(json|csv|tsv|jsonl|txt|xml|svg)$/i
-const MAX_TEXT_BYTES = 150_000
-const MAX_DATA_BYTES = 20_000
 const MAX_TEXT_FILES = 500
-const MAX_PATCH_LINES = 150
-const MAX_TREE_FILES = 4000
 
 export class GithubError extends Error {}
 
@@ -19,17 +27,6 @@ export function parseRepoSpec(input) {
   const short = /^([\w.-]+)\/([\w.-]+)(?:@(.+))?$/.exec(text)
   if (short) return { owner: short[1], repo: short[2], ref: short[3] ?? null }
   throw new GithubError(`Can't read "${input}" as a GitHub repo. Use owner/name or a github.com URL.`)
-}
-
-async function pool(items, size, task) {
-  const queue = [...items.keys()]
-  const results = new Array(items.length)
-  await Promise.all(
-    Array.from({ length: Math.min(size, items.length) }, async () => {
-      for (let i = queue.shift(); i !== undefined; i = queue.shift()) results[i] = await task(items[i], i)
-    }),
-  )
-  return results
 }
 
 function authHeaders(token) {
@@ -73,13 +70,6 @@ export async function fetchText(ctx, entry) {
   const res = await fetch(`${RAW}/${ctx.owner}/${ctx.repo}/${ctx.commit}/${entry.path.split('/').map(encodeURIComponent).join('/')}`)
   if (!res.ok) throw new GithubError(`raw fetch ${res.status} for ${entry.path}`)
   return res.text()
-}
-
-const countLines = (text) => (text ? text.split('\n').length - (text.endsWith('\n') ? 1 : 0) : 0)
-
-function wantsText(entry) {
-  if (BINARY_EXT.test(entry.path)) return false
-  return entry.size <= (DATA_EXT.test(entry.path) ? MAX_DATA_BYTES : MAX_TEXT_BYTES)
 }
 
 function textPriority(entry) {

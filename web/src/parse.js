@@ -19,6 +19,33 @@ const EXT_LANG = {
 const SCRIPT_LANGS = new Set(['javascript', 'typescript'])
 const JS_EXTENSIONS = ['.js', '.mjs', '.cjs', '.jsx', '.ts', '.tsx']
 
+// Shared by the GitHub and local-folder loaders: which files get their text read, and how much.
+export const BINARY_EXT = /\.(png|jpe?g|gif|ico|webp|woff2?|ttf|otf|pdf|zip|gz|tar|pkl|xlsx|lock|mp[34]|mov|wasm|so|dylib|bin)$/i
+export const DATA_EXT = /\.(json|csv|tsv|jsonl|txt|xml|svg)$/i
+export const MAX_TEXT_BYTES = 150_000
+export const MAX_DATA_BYTES = 20_000
+export const MAX_PATCH_LINES = 150
+export const MAX_TREE_FILES = 4000
+
+export const countLines = (text) => (text ? text.split('\n').length - (text.endsWith('\n') ? 1 : 0) : 0)
+
+export function wantsText(entry) {
+  if (BINARY_EXT.test(entry.path)) return false
+  return entry.size <= (DATA_EXT.test(entry.path) ? MAX_DATA_BYTES : MAX_TEXT_BYTES)
+}
+
+// Runs task over items with at most `size` in flight, keeping results in input order.
+export async function pool(items, size, task) {
+  const queue = [...items.keys()]
+  const results = new Array(items.length)
+  await Promise.all(
+    Array.from({ length: Math.min(size, items.length) }, async () => {
+      for (let i = queue.shift(); i !== undefined; i = queue.shift()) results[i] = await task(items[i], i)
+    }),
+  )
+  return results
+}
+
 export function langOf(path) {
   const name = path.slice(path.lastIndexOf('/') + 1)
   if (name === 'Dockerfile' || name === 'Justfile' || name === 'Makefile') return 'shell'

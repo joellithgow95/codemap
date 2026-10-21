@@ -4,3 +4,16 @@
 
 [functions]
   directory = "web/netlify/functions"
+
+# The page holds a GitHub token in sessionStorage and renders text from arbitrary repos, so the
+# CSP only lets scripts come from this site and data go to GitHub's API and raw-content hosts.
+# Inline style attributes stay allowed: the folder tree and timeline set them for layout.
+# no-referrer keeps the OAuth ?code= out of Referer headers on the redirect back from GitHub.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self'; connect-src 'self' https://api.github.com https://raw.githubusercontent.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+    Referrer-Policy = "no-referrer"
+    X-Content-Type-Options = "nosniff"
+    Cross-Origin-Opener-Policy = "same-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"

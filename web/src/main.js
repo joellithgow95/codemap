@@ -13,7 +13,10 @@ import { extractSymbols } from './parse.js'
 import { GithubError, fetchText, loadGithub, parseRepoSpec } from './github.js'
 
 const $ = (id) => document.getElementById(id)
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+// Escapes for text and for quoted attributes: repo paths and commit text come from arbitrary GitHub
+// repos, and git allows quotes in file names.
+const esc = (s) =>
+  String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 
 const VIEWS = [
   { id: 'city', label: 'CITY', hint: 'files as towers, folders as districts' },
@@ -86,7 +89,7 @@ function startOAuth() {
 
 async function stall(message) {
   $('loading').hidden = false
-  $('loading-text').innerHTML = `${esc(message)}<br><br><a class="chip" href="${location.pathname}">BACK</a>`
+  $('loading-text').innerHTML = `${esc(message)}<br><br><a class="chip" href="${esc(location.pathname)}">BACK</a>`
   $('loading-bar').style.width = '0%'
   await new Promise(() => {})
 }
@@ -953,7 +956,7 @@ function refreshHud() {
     const c = commits[k]
     const add = c.files.reduce((s, f) => s + f.add, 0)
     const del = c.files.reduce((s, f) => s + f.del, 0)
-    info.innerHTML = `<b>${c.short}</b> ${esc(c.subject)} <span class="dim">— ${esc(c.author)} ${c.date.slice(0, 10)} · ${c.files.length} files <span class="add">+${add}</span> <span class="del">−${del}</span></span>`
+    info.innerHTML = `<b>${esc(c.short)}</b> ${esc(c.subject)} <span class="dim">— ${esc(c.author)} ${esc(c.date.slice(0, 10))} · ${c.files.length} files <span class="add">+${add}</span> <span class="del">−${del}</span></span>`
   }
   renderTree()
   renderLegend()
@@ -1130,7 +1133,7 @@ function historyView(file) {
   const rows = [...file.events].reverse().map((ev) => {
     const c = commits[ev.commit]
     const open = ev.commit === state.k
-    return `<div class="list-row ${open ? 'sel' : ''}" data-commit="${ev.commit}"><span class="sha">${c.short}</span><span class="sub">${esc(c.subject)}<div class="dim">${esc(c.author)} · ${c.date.slice(0, 10)}</div></span><span><span class="add">+${ev.add}</span> <span class="del">−${ev.del}</span></span></div>${open ? patchHtml(ev.patch.patch + (ev.patch.truncated ? '\n… truncated' : '')) : ''}`
+    return `<div class="list-row ${open ? 'sel' : ''}" data-commit="${ev.commit}"><span class="sha">${esc(c.short)}</span><span class="sub">${esc(c.subject)}<div class="dim">${esc(c.author)} · ${esc(c.date.slice(0, 10))}</div></span><span><span class="add">+${ev.add}</span> <span class="del">−${ev.del}</span></span></div>${open ? patchHtml(ev.patch.patch + (ev.patch.truncated ? '\n… truncated' : '')) : ''}`
   })
   if (file.cur && file.cur.status !== 'clean') {
     rows.unshift(`<div class="list-row ${state.k >= count ? 'sel' : ''}" data-commit="${count}"><span class="sha">WT</span><span class="sub">uncommitted — ${file.cur.status}</span><span class="mod">${file.cur.dirtyLines.length} lines</span></div>`)

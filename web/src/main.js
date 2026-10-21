@@ -231,7 +231,8 @@ const renderer = new THREE.WebGLRenderer({ canvas: $('scene'), antialias: true }
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2))
 const scene = new THREE.Scene()
 scene.background = new THREE.Color('#03060d')
-scene.fog = new THREE.FogExp2('#03060d', 0.55 / city.size)
+const FOG_DENSITY = 0.55 / city.size
+scene.fog = new THREE.FogExp2('#03060d', FOG_DENSITY)
 const perspCamera = new THREE.PerspectiveCamera(55, 1, 0.1, city.size * 8)
 // The orthographic frustum is fixed; zoom does the scaling, the way OrbitControls dollies it.
 const ORTHO_HALF = city.size * 0.6
@@ -620,7 +621,8 @@ function fitView(box, dir, margin = 1.12) {
   halfW = Math.max(halfW * margin, 1)
   halfH = Math.max(halfH * margin, 1)
   // Fit into the part of the screen the code panel doesn't cover.
-  const aspect = (innerWidth - panelWidth()) / innerHeight
+  const inset = viewInset()
+  const aspect = (innerWidth - inset.x) / (innerHeight - inset.top - inset.bottom)
   if (camera.isOrthographicCamera) {
     // Distance only has to clear the tallest thing in the box; zoom sets the size.
     const zoom = Math.min((ORTHO_HALF * aspect) / halfW, ORTHO_HALF / halfH)
@@ -829,6 +831,7 @@ function pickAt(x, y) {
 function select(file, { focus = false } = {}) {
   state.selected = file
   if (file) {
+    setSheet('')
     renderPanel()
     $('panel').classList.remove('closed')
     document.body.classList.add('panel-open')
@@ -874,6 +877,7 @@ renderer.domElement.addEventListener('pointerup', (e) => {
     if (viewHelper.handleClick(e)) tween = null
     return
   }
+  setSheet('')
   select(pickAt(e.clientX, e.clientY))
 })
 // First double-click focuses the file's folder; once that folder is focused it flies to the file.
@@ -1055,6 +1059,7 @@ function renderTree() {
   walk(root, 0)
 
   $('tree-title').textContent = `${k >= count ? 'WORKTREE' : commits[k].short} · ${changed} changed`
+  $('dock-count').textContent = changed || ''
   $('tree-filter').classList.toggle('active', state.changedOnly)
   const parts = state.focus ? state.focus.split('/') : []
   const crumbs = [['', `⌂ ${repoName.split('/').at(-1)}`], ...parts.map((p, i) => [parts.slice(0, i + 1).join('/'), p])]
@@ -1208,7 +1213,7 @@ const tl = $('timeline')
 tl.max = count
 tl.value = state.k
 tl.oninput = () => setCommit(Number(tl.value))
-$('ticks').innerHTML = Array.from({ length: count + 1 }, (_, i) => `<i style="left:calc(${(i / count) * 100}% + ${8 - (i / count) * 16}px)"></i>`).join('')
+$('ticks').innerHTML = Array.from({ length: count + 1 }, (_, i) => `<i style="left:calc(${(i / count) * 100}% + var(--thumb, 16px) * ${(0.5 - i / count).toFixed(4)})"></i>`).join('')
 let playTimer = 0
 function setPlaying(on) {
   state.playing = on
@@ -1289,6 +1294,19 @@ function toggleKeys(open) {
 $('menu-open').onclick = () => toggleMenu(true)
 $('menu-resume').onclick = () => toggleMenu(false)
 $('keys-open').onclick = () => toggleKeys(true)
+$('menu-top').onclick = () => toggleMenu(true)
+$('search-open').onclick = () => openSearch(true)
+
+// Narrow screens: one of the FILES / LOOK / CAMERA sheets can sit above the dock; the CSS shows the
+// panels that match body[data-sheet]. Tapping the open tab, the scene or a file closes it.
+function setSheet(name) {
+  document.body.dataset.sheet = name
+  document.querySelectorAll('#dock [data-sheet]').forEach((b) => b.classList.toggle('active', b.dataset.sheet === name))
+}
+document.querySelectorAll('#dock [data-sheet]').forEach((b) => {
+  b.onclick = () => setSheet(document.body.dataset.sheet === b.dataset.sheet ? '' : b.dataset.sheet)
+})
+setSheet('')
 $('menu-keys').onclick = () => {
   toggleMenu(false)
   toggleKeys(true)
@@ -1406,21 +1424,31 @@ function resize() {
   composer.setSize(innerWidth, innerHeight)
   labels.setSize(innerWidth, innerHeight)
   const aspect = innerWidth / innerHeight
+  // A portrait screen frames the city from much further back; thin the fog so it doesn't vanish.
+  scene.fog.density = FOG_DENSITY / Math.max(1, 1.6 / aspect)
   perspCamera.aspect = aspect
   orthoCamera.left = -ORTHO_HALF * aspect
   orthoCamera.right = ORTHO_HALF * aspect
   applyViewShift()
 }
 
-// Width the open code panel covers (matches #panel's min(46vw, 760px)).
-const panelWidth = () => (state.selected ? Math.min(innerWidth * 0.46, 760) : 0)
+// The part of the screen the HUD covers, so the scene is framed and centred in what's left. Wide
+// screens: the code panel's side column, which matches #panel's min(46vw, 760px). Narrow screens:
+// the top bar, plus the timeline and dock, or the code panel's CSS height when it is open.
+const compact = matchMedia('(max-width: 720px), (pointer: coarse) and (max-height: 520px)')
+function viewInset() {
+  if (!compact.matches) return { x: state.selected ? Math.min(innerWidth * 0.46, 760) : 0, top: 0, bottom: 0 }
+  const bottom = state.selected ? $('panel').offsetHeight : innerHeight - $('hud-timeline').getBoundingClientRect().top
+  return { x: 0, top: $('hud-title').offsetHeight, bottom }
+}
 
-// Slides the projection centre left by half the panel width, so whatever the camera looks at sits
-// in the middle of the uncovered area. Eased in frame() to follow the panel's slide.
-let viewShift = 0
+// Slides the projection centre away from what the HUD covers by half its size, so whatever the camera
+// looks at sits in the middle of the uncovered area. Eased in frame() to follow the panel's slide.
+const viewShift = { x: 0, y: 0 }
 function applyViewShift() {
+  const shifted = Math.abs(viewShift.x) > 0.5 || Math.abs(viewShift.y) > 0.5
   for (const cam of [perspCamera, orthoCamera]) {
-    if (viewShift > 0.5) cam.setViewOffset(innerWidth, innerHeight, viewShift, 0, innerWidth, innerHeight)
+    if (shifted) cam.setViewOffset(innerWidth, innerHeight, viewShift.x, viewShift.y, innerWidth, innerHeight)
     else cam.clearViewOffset()
     cam.updateProjectionMatrix()
   }
@@ -1452,12 +1480,16 @@ function frame() {
 
   const pulse = 0.7 + 0.3 * Math.sin(time * 4)
   const ease = Math.min(1, dt * 6)
-  const shiftGoal = panelWidth() / 2
-  if (Math.abs(shiftGoal - viewShift) > 0.5) {
-    viewShift += (shiftGoal - viewShift) * Math.min(1, dt * 12)
+  const inset = viewInset()
+  const shiftGoal = { x: inset.x / 2, y: (inset.bottom - inset.top) / 2 }
+  const shiftGap = Math.abs(shiftGoal.x - viewShift.x) + Math.abs(shiftGoal.y - viewShift.y)
+  if (shiftGap > 0.5) {
+    viewShift.x += (shiftGoal.x - viewShift.x) * Math.min(1, dt * 12)
+    viewShift.y += (shiftGoal.y - viewShift.y) * Math.min(1, dt * 12)
     applyViewShift()
-  } else if (viewShift !== shiftGoal) {
-    viewShift = shiftGoal
+  } else if (shiftGap > 0) {
+    viewShift.x = shiftGoal.x
+    viewShift.y = shiftGoal.y
     applyViewShift()
   }
   let graphMoved = false
@@ -1515,13 +1547,16 @@ function frame() {
   updateDistricts(ease)
   updateHover(dt)
   composer.render()
+  // The gizmo's box is empty while its sheet is closed on narrow screens; then it isn't drawn.
   const gizmo = $('gizmo').getBoundingClientRect()
-  viewHelper.location.right = innerWidth - gizmo.right
-  viewHelper.location.bottom = innerHeight - gizmo.bottom
-  // Draw the gizmo over the composed frame instead of clearing it.
-  renderer.autoClear = false
-  viewHelper.render(renderer)
-  renderer.autoClear = true
+  if (gizmo.width) {
+    viewHelper.location.right = innerWidth - gizmo.right
+    viewHelper.location.bottom = innerHeight - gizmo.bottom
+    // Draw the gizmo over the composed frame instead of clearing it.
+    renderer.autoClear = false
+    viewHelper.render(renderer)
+    renderer.autoClear = true
+  }
   labels.render(scene, camera)
   requestAnimationFrame(frame)
 }

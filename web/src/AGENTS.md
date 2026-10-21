@@ -11,7 +11,7 @@
 | `git.js` | Read-only `.git` reader for `local.js`: HEAD and refs, loose objects, packfiles and delta chains, inflated with the native `DecompressionStream` |
 | `parse.js` | Language detection, symbol and import extraction, and the file-size limits shared by the browser loaders (the scanner has its own in Python) |
 | `highlight.js` | Regex syntax highlighter for the code panel; escapes everything it emits |
-| `style.css` | HUD styling (Tron palette in `:root` variables) |
+| `style.css` | HUD styling (Tron palette in `:root` variables). The last blocks are the narrow-screen layout: see the mobile rules below |
 
 ## The map document
 
@@ -53,3 +53,12 @@ HUD renderers (`renderTree`, panel views, legend) → menu, keys overlay and sea
   `focus` / `target` = goal). Camera moves go through `flyTo` / `flyToFit`.
 - **Both cameras.** Anything that reads the camera uses the `camera` binding (perspective or
   orthographic). Projection changes go through `applyViewShift()` so the code-panel offset holds.
+- **Mobile is a second layout, not a shrunk one.** Under `(max-width: 720px)` (or a short coarse-pointer
+  landscape screen) `style.css` turns the floating panels into sheets: `#dock` (FILES / LOOK / CAMERA) sets
+  `body[data-sheet]` through `setSheet()`, and the CSS shows the matching panels above the timeline. The code
+  panel becomes a bottom sheet. The same query is `compact` in `main.js`; `viewInset()` reports what the HUD
+  covers so `fitView` and the view offset centre the scene in what's left. Input-specific hiding (fly mode,
+  key hints, tooltip) keys off `(hover: none)`, not width. Keep both queries in sync, and keep the sheet
+  heights in the `:root` variables (`--dock-h`, `--tl-h`) matching the elements they size.
+- **Fog scales with aspect** (`resize()`): a portrait screen frames the city from much further back and the
+  desktop density would hide it.

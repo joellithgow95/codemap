@@ -170,3 +170,156 @@ a.chip { text-decoration: none; display: block; }
 .field { width: 100%; margin-top: 6px; background: rgba(0, 240, 255, 0.05); border: 1px solid var(--line); color: var(--ice); font: inherit; padding: 6px 8px; outline: none; }
 .field:focus { border-color: var(--cyan); }
 .note { margin-top: 6px; font-size: 10px; }
+
+/* ---- Phones and other narrow screens ----
+   The desktop HUD floats five panels over the scene, which is unusable at 390px. Here the scene gets the
+   whole screen and the panels become sheets: a bottom dock (FILES / LOOK / CAMERA) opens one at a time
+   above the timeline, and the code panel slides up from the bottom. The query is mirrored by `compact`
+   in main.js, which moves the camera's view offset up instead of left. */
+html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+button { touch-action: manipulation; }
+#hud-actions, #dock, .touch-hint { display: none; }
+
+@media (hover: none) {
+  #tooltip, #fly-toggle, #keys-open, #menu-keys, .mode-label, .chip kbd { display: none !important; }
+  .pointer-hint { display: none; }
+  .touch-hint { display: inline; }
+}
+
+@media (max-width: 720px), (pointer: coarse) and (max-height: 520px) {
+  :root {
+    --sa-t: env(safe-area-inset-top, 0px);
+    --sa-b: env(safe-area-inset-bottom, 0px);
+    --left: max(12px, env(safe-area-inset-left, 0px));
+    --right: max(12px, env(safe-area-inset-right, 0px));
+    --dock-h: 48px;
+    --tl-h: 80px;
+    --gap: 8px;
+    --thumb: 22px;
+    /* Bottom edge of the open sheet: above the dock and the timeline card. */
+    --sheet-bottom: calc(var(--sa-b) + var(--dock-h) + var(--tl-h) + var(--gap) * 2);
+  }
+  html, body { font-size: 13px; }
+
+  .chip { min-height: 44px; padding: 6px 12px; }
+  .chip.icon { display: inline-grid; place-items: center; width: 44px; padding: 0; background: var(--panel); }
+
+  /* Top bar: brand and repo line on the left, search and menu on the right, over a scrim. */
+  #hud-title {
+    top: 0; left: 0; right: 0;
+    padding: calc(var(--sa-t) + 8px) var(--right) 18px var(--left);
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; align-content: center;
+    background: linear-gradient(rgba(3, 6, 13, 0.92) 62%, rgba(3, 6, 13, 0));
+  }
+  .brand { font-size: 15px; letter-spacing: 0.22em; align-self: end; }
+  #repo-meta { grid-column: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; align-self: start; }
+  #hud-actions { display: flex; gap: 6px; grid-column: 2; grid-row: 1 / span 2; pointer-events: auto; }
+
+  /* Sheets: only the panels named by body[data-sheet] show, stacked above the timeline. */
+  #sheets {
+    position: fixed; left: var(--left); right: var(--right); bottom: var(--sheet-bottom); z-index: 5;
+    max-width: 560px; display: flex; flex-direction: column; gap: 6px; pointer-events: none;
+    max-height: calc(100dvh - var(--sheet-bottom) - var(--sa-t) - 12px); overflow-y: auto;
+  }
+  #hud-views, #hud-tree, #hud-camera, #hud-legend { position: static; display: none; width: auto; }
+  body[data-sheet="look"] #hud-views, body[data-sheet="look"] #hud-legend { display: flex; }
+  body[data-sheet="tree"] #hud-tree { display: flex; }
+  body[data-sheet="camera"] #hud-camera { display: flex; }
+  #hud-views, #hud-tree, #hud-legend { pointer-events: auto; backdrop-filter: blur(10px); background: rgba(4, 12, 22, 0.92); }
+  body.panel-open #hud-views, body.panel-open #hud-camera { right: auto; }
+
+  #hud-views { flex-direction: column; gap: 6px; padding: 10px; border: 1px solid var(--line); }
+  #hud-views .group-label { margin: 0; font-size: 10px; }
+  #hud-views .group-label + div { margin-bottom: 6px; }
+  #hud-views .chip { text-align: center; }
+  #view-buttons { flex-direction: row; gap: 4px; }
+  #view-buttons .chip { flex: 1; padding-inline: 4px; }
+  #lens-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  #menu-open { display: none; }
+
+  #hud-legend { max-width: none; flex-wrap: wrap; gap: 4px 14px; padding: 8px 10px; border: 1px solid var(--line); font-size: 11px; }
+  #hud-legend > .dim { flex: 1 0 100%; }
+
+  #hud-tree { flex-direction: column; max-height: min(46dvh, 400px); padding: 10px; }
+  #tree-head .group-label { font-size: 11px; }
+  #tree-filter { min-height: 34px; padding: 4px 12px; font-size: 11px; }
+  #tree-crumbs { margin: 8px 0 4px; padding-bottom: 8px; font-size: 12px; }
+  #tree-crumbs span { padding: 6px 2px; }
+  .tree-row { font-size: 13px; align-items: center; min-height: 36px; padding-left: calc(var(--depth, 0) * 14px); }
+  .tree-row .caret, .tree-row .tag { width: 28px; }
+
+  #hud-camera { align-items: flex-end; justify-content: space-between; gap: 8px; }
+  #camera-buttons { flex: 1; min-width: 0; gap: 4px; padding: 8px; backdrop-filter: blur(10px); background: rgba(4, 12, 22, 0.92); }
+  #camera-buttons .chip { min-height: 40px; padding: 4px 10px; font-size: 12px; }
+  #cam-hint { font-size: 10px; padding-top: 4px; }
+  #cam-hint b { display: inline; }
+  #gizmo { width: 128px; height: 128px; }
+
+  /* Timeline card over the dock: play + scrubber, then the commit line. */
+  #hud-timeline, body.panel-open #hud-timeline {
+    left: var(--left); right: var(--right); bottom: calc(var(--sa-b) + var(--dock-h) + var(--gap));
+    height: var(--tl-h); padding: 6px 10px; gap: 2px 10px;
+    display: grid; grid-template-columns: 44px minmax(0, 1fr); grid-template-rows: 44px auto; align-items: center;
+  }
+  #play { height: 44px; min-height: 0; padding: 0; font-size: 16px; }
+  #timeline-track { height: 44px; min-width: 0; }
+  #ticks { top: 4px; }
+  #commit-info { grid-column: 1 / -1; width: auto; font-size: 12px; }
+  #timeline { -webkit-appearance: none; appearance: none; background: transparent; height: 44px; margin: 0; }
+  #timeline::-webkit-slider-runnable-track { height: 3px; background: rgba(0, 240, 255, 0.3); }
+  #timeline::-moz-range-track { height: 3px; background: rgba(0, 240, 255, 0.3); }
+  #timeline::-webkit-slider-thumb { -webkit-appearance: none; width: var(--thumb); height: var(--thumb); margin-top: calc((3px - var(--thumb)) / 2); border: 0; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 12px var(--cyan); }
+  #timeline::-moz-range-thumb { width: var(--thumb); height: var(--thumb); border: 0; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 12px var(--cyan); }
+
+  #dock {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 6;
+    height: calc(var(--dock-h) + var(--sa-b)); padding: 0 var(--right) var(--sa-b) var(--left);
+    background: rgba(3, 8, 16, 0.95); border-top: 1px solid var(--line); backdrop-filter: blur(10px);
+  }
+  .dock-tab { flex: 1; min-width: 0; background: none; border: 0; color: var(--ice); opacity: 0.7; font: inherit; font-size: 12px; letter-spacing: 0.18em; cursor: pointer; }
+  .dock-tab + .dock-tab { border-left: 1px solid rgba(0, 240, 255, 0.12); }
+  .dock-tab.active { opacity: 1; color: var(--cyan); background: rgba(0, 240, 255, 0.08); box-shadow: inset 0 2px var(--cyan); }
+  .dock-tab b { margin-left: 6px; color: var(--magenta); font-weight: normal; letter-spacing: 0; }
+
+  /* Code panel: a bottom sheet over the dock; the scene shifts up to stay visible above it. */
+  #panel { top: auto; left: 0; width: 100%; height: min(64dvh, 560px); border-left: 0; border-top: 1px solid var(--cyan); box-shadow: 0 -10px 40px rgba(0, 240, 255, 0.14); }
+  #panel.closed { transform: translateY(105%); }
+  #panel-head { position: relative; padding: 14px 8px 6px var(--left); }
+  #panel-head::before { content: ""; position: absolute; top: 5px; left: 50%; width: 36px; height: 3px; margin-left: -18px; background: var(--line); }
+  #panel-path { font-size: 13px; }
+  #panel-close { width: 44px; padding: 0; }
+  #panel-meta { padding: 6px var(--right) 6px var(--left); gap: 4px 12px; font-size: 11px; }
+  #panel-tabs button { padding: 12px 7px; }
+  #panel-body { padding-bottom: var(--sa-b); }
+  .code { font-size: 11px; }
+  .list-row { padding: 10px var(--right) 10px var(--left); }
+
+  .label.dir { padding: 6px 8px; }
+  #toast { top: calc(var(--sa-t) + 72px); max-width: calc(100vw - 24px); }
+
+  .overlay { align-items: flex-end; padding: calc(var(--sa-t) + 8px) var(--right) calc(var(--sa-b) + 8px) var(--left); }
+  .menu-card { width: 100%; padding: 16px; }
+  .menu-card h1 { margin-bottom: 8px; }
+  .field { font-size: 16px; padding: 10px; }
+  .menu-row .field { padding: 8px 10px; }
+  .repo-row { padding: 11px 8px; font-size: 13px; }
+  #gh-section summary, #local-section summary { padding: 10px 0; }
+  .chip.big { margin-top: 0; }
+  .menu-foot { margin-top: 12px; }
+
+  #search { top: calc(var(--sa-t) + 64px); width: calc(100vw - var(--left) - var(--right)); }
+  #search-input { font-size: 16px; padding: 14px 12px; }
+  #search-results { max-height: 42dvh; overflow: auto; }
+}
+
+/* Landscape phones: less chrome, since the scene only has a few hundred pixels of height. */
+@media (max-height: 520px) and (pointer: coarse) {
+  :root { --dock-h: 40px; --tl-h: 56px; --gap: 6px; }
+  #hud-title { padding-bottom: 10px; }
+  .chip, .chip.icon { min-height: 38px; }
+  .chip.icon { width: 38px; }
+  #hud-timeline, body.panel-open #hud-timeline { grid-template-columns: 44px minmax(0, 1fr) minmax(0, 36%); grid-template-rows: 44px; }
+  #commit-info { grid-column: auto; }
+  #lens-buttons { grid-template-columns: repeat(4, 1fr); }
+  #panel { height: 72dvh; }
+}

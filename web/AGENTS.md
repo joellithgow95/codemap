@@ -6,7 +6,7 @@ The browser app, its build, and its dev-only server endpoints.
 
 | Path | What |
 |------|------|
-| `index.html` | All HUD markup: header, view/lens buttons, folder tree, camera HUD, code panel, menu, keys overlay, search |
+| `index.html` | All HUD markup: header, view/lens buttons, folder tree, camera HUD, code panel, bottom dock (narrow screens), menu, keys overlay, search |
 | `src/` | App source. See [`src/AGENTS.md`](src/AGENTS.md) |
 | `netlify/functions/` | OAuth token exchange. See [`netlify/functions/AGENTS.md`](netlify/functions/AGENTS.md) |
 | `scripts/make-demo.mjs` | `npm run demo`: loads a public GitHub repo with `src/github.js` and writes a demo map |

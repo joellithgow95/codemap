@@ -1,5 +1,7 @@
 {
-  "name": "dash-codemap",
+  "name": "codemap",
+  "description": "3D map of a git repo: files as towers, folders as districts, commits as a timeline",
+  "license": "MIT",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -10,6 +12,7 @@
     "demo": "node scripts/make-demo.mjs"
   },
   "dependencies": {
+    "diff": "^9.0.0",
     "three": "^0.186.1",
     "vite": "^8.3.4"
   }

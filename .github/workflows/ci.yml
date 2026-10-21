@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Read-only token: CI only builds, it never writes to the repo.
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Actions are pinned to commit SHAs (tag in the comment) so a moved tag can't change what runs.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build the app
+        working-directory: web
+        run: |
+          npm ci
+          npm audit --audit-level=high
+          npm run build
+
+      # Only the public demo maps may ship; a local scan in dist/ would publish private source.
+      - name: Check the bundle holds no local scans
+        run: |
+          test ! -e web/dist/maps
+          test -z "$(find web/dist -name '*.json' -not -path 'web/dist/demo/*')"
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.10"
+
+      - name: Byte-compile the scanner (oldest supported Python)
+        run: python -m py_compile scan/scan.py

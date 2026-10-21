@@ -8,3 +8,8 @@ web/.env.*
 # Local Netlify folder
 .netlify
 .netlify/
+
+# OS and tool clutter
+.DS_Store
+__pycache__/
+*.pyc

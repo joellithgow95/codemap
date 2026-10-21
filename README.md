@@ -1,68 +1,112 @@
-# dash-codemap
+# CodeMap
 
-3D, Tron-style map of a git repo (default: `~/Code/personal/dash`). Three.js + Vite.
+A 3D, Tron-style map of a git repository. Files are towers, folders are districts, and the commit
+history is a timeline you can scrub or play. Load any public GitHub repo in the browser, or scan a
+local checkout.
 
-## Run
+**Live:** https://codemap-3d.netlify.app · Try a repo: `https://codemap-3d.netlify.app/?gh=owner/name`
 
-```
-cd web
-npm install
-npm run dev                    # http://127.0.0.1:5179
-```
+![City view of simonw/shot-scraper, coloured by language](docs/city.jpg)
 
-The local scanner (`scan/scan.py`, stdlib only) writes `web/local-maps/<repo>.json`: files with text,
-symbols, imports, per-line blame, working-tree dirty lines, and every commit with its patches.
-Scan any repo with `npm run scan -- <repo path>`; every scanned repo is listed in the menu (Esc)
-and selectable via `?repo=<name>`. The menu also rescans the current one.
-
-## Load any GitHub repo (no backend)
-
-Menu (`Esc`) -> Load from GitHub, or open `?gh=owner/name&n=50`. The browser reads the file tree,
-commit list, and per-commit diffs from the GitHub API and file contents from
-`raw.githubusercontent.com`; nothing is cloned. Unauthenticated limit is 60 API calls/hour; a token
-(kept in `sessionStorage`, sent only to api.github.com) gives 5,000/hour and private repos. History
-is the last N commits, so towers are sized from HEAD and walked backwards through the diffs.
-
-Local scans live in `web/local-maps/` (git-ignored, dev server only). The public build ships only
-`web/public/demo/`; add one with `GITHUB_TOKEN=... npm run demo -- owner/name 60`.
-
-## Sign in with GitHub (optional, Netlify)
-
-The page works without sign-in (public repos, or a pasted token). To add the button:
-
-1. Create a **GitHub App** (preferred: read-only `Contents` + `Metadata`, user picks repos) or a classic
-   OAuth App. Callback URL = the site root, e.g. `https://<site>.netlify.app/`.
-2. Netlify env vars: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` (server-side), `VITE_GITHUB_CLIENT_ID`
-   (public, baked into the bundle), and `VITE_GITHUB_SCOPE=repo` only for a classic OAuth App.
-3. `netlify.toml` already builds `web/` and deploys `web/netlify/functions/github-token.mjs`, which
-   swaps the OAuth `code` for a token and returns only that. The secret never reaches the browser.
-
-Local dev: copy `web/.env.example` to `web/.env.local`; `npm run dev` serves the same function.
-
-## Views and lenses
+## What it shows
 
 | View | Geometry |
 |------|----------|
-| City (1) | file = tower (height = lines), folder = district |
-| Graph (2) | import network in free space |
-| Strata (3) | each tower is a stack of slabs, one per commit that touched it |
+| City (`1`) | file = tower (height = lines, footprint = share of its folder), folder = district |
+| Graph (`2`) | the import network in free space |
+| Strata (`3`) | each tower is a stack of slabs, one per commit that touched it |
 
-Lenses (L): change (what the selected commit touched, or the working tree), language, churn, age.
-The timeline scrubs commits; the last stop is the uncommitted working tree. Click a tower for the
-code panel (blame gutter, dirty lines, history diffs, symbols); selected files draw import arcs.
+Lenses (`L`) colour the towers: **change** (what the selected commit touched, or the uncommitted
+working tree), **language**, **churn** and **age**. The timeline steps through commits; its last
+stop is the working tree. Click a tower for the code panel: source with a blame gutter, dirty
+lines, per-commit diffs and symbols. A selected file draws arcs to what it imports and what imports
+it.
 
-## Camera and focus
+![Focused on the tests folder: the rest of the city slides away and fades](docs/focus.jpg)
 
-`?` opens the full list of keys and mouse controls.
+## Getting around
 
-The camera HUD (bottom right) has presets: TOP (`T`, an orthographic top-down map that turns back
-into perspective once you orbit away), ISO (`I`), FRONT, SIDE, FRAME (`.`), ORTHO (`O`, sticky) and
-RESET (`Home`). The axis gizmo next to it swings the camera to look along the clicked axis.
-Looking straight down orthographically, the mouse works like a map: left-drag pans, right-drag
-rotates (tilting far enough leaves the map). Everywhere else left-drag orbits and right-drag pans.
+Press `?` in the app for every key and mouse control.
 
-The top-left panel is the folder tree at the current commit, each folder showing how many of its
-files were added, modified or deleted (CHANGED hides the untouched ones). Click a folder name in the
-tree, a folder label in the scene, or double-click a tower to focus its folder. The rest of the city
-slides away and fades, and the presets frame the focused folder. `Backspace` or the breadcrumb goes
-back up.
+- **Camera presets** (bottom right): TOP (`T`) is an orthographic top-down map where dragging pans
+  like a map; ISO (`I`), FRONT and SIDE; FRAME (`.`) fits the selection; ORTHO (`O`) toggles
+  orthographic; RESET (`Home`) goes back to the whole repo. The axis gizmo swings the camera to
+  look along the axis you click.
+- **Folder tree** (top left): the repo at the current commit, each folder with its count of added,
+  modified and deleted files. CHANGED hides untouched files.
+- **Focus**: click a folder in the tree, click a folder label in the scene, or double-click a tower
+  to focus its folder. The rest of the city slides away and fades; `Backspace` or the breadcrumb
+  goes back up.
+- `/` searches files, `←` `→` step commits, `Space` plays the history, `F` free-flies (WASD).
+
+## Run it locally
+
+Needs Node 20.19+ (or 22.12+), Python 3.10+ and git.
+
+```sh
+cd web
+npm install
+npm run dev                     # http://127.0.0.1:5179
+```
+
+### Scan a local repo
+
+```sh
+npm run scan -- ../path/to/repo   # relative to where you run it
+```
+
+The scanner (`scan/scan.py`, standard library only) writes `web/local-maps/<repo>.json` with each
+file's text, symbols, imports and per-line blame, the working tree's dirty lines, and every commit
+with its patches. Every scanned repo appears in the menu (`Esc`) and at `?repo=<name>`; the menu
+can rescan the current one.
+
+> **Local scans contain the full source of the repo.** `web/local-maps/` is git-ignored and only
+> the dev server serves it. It never goes into a build. Don't copy a private scan into
+> `web/public/`.
+
+### Load from GitHub
+
+Menu → Load from GitHub, or open `?gh=owner/name&n=50`. The browser reads the tree, the last `n`
+commits and their diffs from the GitHub API, and file contents from `raw.githubusercontent.com`.
+Nothing is cloned and there is no backend in the loop. Without a token GitHub allows 60 API calls
+an hour. A token (sign in, or paste one) raises that to 5,000 and reaches private repos.
+
+Tokens are kept in the tab's `sessionStorage` and sent only to `api.github.com`. The live site's
+Content-Security-Policy only lets the page talk to itself, the GitHub API and the raw-content
+host.
+
+## Deploy your own (Netlify)
+
+`netlify.toml` builds `web/`, serves `web/dist`, sets the security headers and deploys one function,
+`web/netlify/functions/github-token.mjs`. The page works without sign-in (public repos, or a pasted
+token). To add the **Sign in with GitHub** button:
+
+1. Create a **GitHub App** (preferred: read-only *Contents* and *Metadata*, the user picks which
+   repos) or a classic OAuth App. Set the callback URL to the site root, e.g.
+   `https://<site>.netlify.app/`.
+2. Set Netlify environment variables: `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` (server-side
+   only), `VITE_GITHUB_CLIENT_ID` (public, baked into the bundle at build time), and
+   `VITE_GITHUB_SCOPE=repo` only for a classic OAuth App.
+3. Deploy. The function swaps the OAuth `code` for a token and returns only the token; the client
+   secret never reaches the browser.
+
+For local sign-in, copy `web/.env.example` to `web/.env.local`; `npm run dev` serves the same
+function.
+
+The demo maps shipped with the site live in `web/public/demo/`. Add one with
+`GITHUB_TOKEN=... npm run demo -- owner/name 60`, for a **public** repo only.
+
+## Project layout
+
+`AGENTS.md` at the root is the map of the code, with a further `AGENTS.md` in each directory for
+that layer's rules. In short: `scan/` is the local scanner, `web/src/` is the app (Three.js, no
+framework), `web/netlify/functions/` is the OAuth token exchange.
+
+## Security
+
+See [SECURITY.md](SECURITY.md) to report a vulnerability.
+
+## License
+
+[MIT](LICENSE). The demo maps in `web/public/demo/` are derived from third-party repositories under
+their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

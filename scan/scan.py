@@ -3,6 +3,7 @@
 import argparse
 import ast
 import json
+import os
 import re
 import subprocess
 from datetime import datetime, timezone
@@ -307,10 +308,13 @@ def build(repo: Path) -> dict:
 def main() -> None:
     """Parse arguments, scan the repo, and write the JSON document."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("repo", type=Path, nargs="?", default=Path("~/Code/personal/dash"))
+    parser.add_argument("repo", type=Path, nargs="?", default=Path("."))
     parser.add_argument("--out-dir", type=Path, default=Path(__file__).parent.parent / "web/local-maps")
     args = parser.parse_args()
-    repo = args.repo.expanduser().resolve()
+    # `npm run scan` runs from web/; INIT_CWD is where the user typed it, so relative paths mean
+    # what they expect.
+    invoked_from = Path(os.environ.get("INIT_CWD", "."))
+    repo = (invoked_from / args.repo.expanduser()).resolve()
     doc = build(repo)
     args.out_dir.mkdir(parents=True, exist_ok=True)
     out = args.out_dir / f"{slug_of(repo)}.json"

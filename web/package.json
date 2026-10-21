@@ -12,7 +12,6 @@
     "demo": "node scripts/make-demo.mjs"
   },
   "dependencies": {
-    "diff": "^9.0.0",
     "three": "^0.186.1",
     "vite": "^8.3.4"
   }

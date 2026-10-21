@@ -932,9 +932,7 @@ function buildButtons() {
   const wire = (el, onPick) => el.querySelectorAll('button').forEach((b) => (b.onclick = () => onPick(b.dataset.id)))
   ;[
     [$('view-buttons'), VIEWS, state.view, setView],
-    [$('menu-views'), VIEWS, state.view, setView],
     [$('lens-buttons'), LENSES, state.lens, setLens],
-    [$('menu-lenses'), LENSES, state.lens, setLens],
   ].forEach(([el, list, active, onPick]) => {
     el.innerHTML = make(list, active)
     wire(el, onPick)
@@ -1202,10 +1200,31 @@ function toast(msg) {
   setTimeout(() => (el.hidden = true), 2200)
 }
 
-$('menu-repos').innerHTML = manifest
-  .map((m) => `<a class="chip wide ${m.name === repoName ? 'active' : ''}" href="?repo=${encodeURIComponent(m.name)}">${esc(m.label ?? m.name)} <span class="dim">${m.files}f · ${m.commits}c</span></a>`)
-  .join('')
+$('current-name').textContent = repoName
+$('current-meta').textContent = `${model.data.branch} @ ${model.data.head} · ${files.length} files · ${count} commits${model.data.truncated ? ' (latest)' : ''}`
 if (ghCtx) $('rescan').hidden = true
+
+// The filter only appears once the list is long enough to need it.
+const REPO_FILTER_MIN = 7
+$('repo-filter').hidden = manifest.length < REPO_FILTER_MIN
+function renderRepos() {
+  const q = $('repo-filter').value.trim().toLowerCase()
+  const shown = manifest.filter((m) => !q || (m.label ?? m.name).toLowerCase().includes(q))
+  $('menu-repos').innerHTML =
+    shown
+      .map((m) => {
+        const current = m.name === repoName ? ' current' : ''
+        const demo = m.base === '/demo/' ? '<span class="tag">DEMO</span>' : ''
+        return `<a class="repo-row${current}" href="?repo=${encodeURIComponent(m.name)}"><span class="nm">${esc(m.label ?? m.name)}</span>${demo}<span class="dim">${m.files}f · ${m.commits}c</span></a>`
+      })
+      .join('') || '<div class="dim">no match</div>'
+}
+renderRepos()
+$('repo-filter').addEventListener('input', renderRepos)
+$('repo-filter').addEventListener('keydown', (e) => {
+  const first = $('menu-repos').querySelector('a')
+  if (e.key === 'Enter' && first) first.click()
+})
 
 $('gh-signin').hidden = !OAUTH_CLIENT_ID || !!token
 $('gh-signin').onclick = startOAuth
@@ -1226,9 +1245,24 @@ $('gh-input').addEventListener('keydown', (e) => e.key === 'Enter' && $('gh-load
 
 function toggleMenu(open) {
   $('menu').hidden = !open
+  if (!open) return
+  $('repo-filter').value = ''
+  renderRepos()
+  if (!$('repo-filter').hidden) $('repo-filter').focus()
+}
+function toggleKeys(open) {
+  $('keys').hidden = !open
 }
 $('menu-open').onclick = () => toggleMenu(true)
 $('menu-resume').onclick = () => toggleMenu(false)
+$('keys-open').onclick = () => toggleKeys(true)
+$('menu-keys').onclick = () => {
+  toggleMenu(false)
+  toggleKeys(true)
+}
+// Clicking the dimmed backdrop (not the card) closes an overlay.
+$('menu').addEventListener('click', (e) => e.target === $('menu') && toggleMenu(false))
+$('keys').addEventListener('click', (e) => e.target === $('keys') && toggleKeys(false))
 $('rescan').onclick = async () => {
   $('rescan-status').textContent = 'scanning…'
   try {
@@ -1290,6 +1324,10 @@ window.addEventListener('keydown', (e) => {
     renderSearch()
     return
   }
+  if (!$('keys').hidden) {
+    if (key === 'escape' || key === '?') toggleKeys(false)
+    return
+  }
   if (key === 'escape') {
     if (!$('menu').hidden) toggleMenu(false)
     else if (state.selected) select(null)
@@ -1301,7 +1339,8 @@ window.addEventListener('keydown', (e) => {
   if (key === '/') {
     e.preventDefault()
     openSearch(true)
-  } else if (key === 'f') setFly(!state.fly)
+  } else if (key === '?') toggleKeys(true)
+  else if (key === 'f') setFly(!state.fly)
   else if (key === '1') setView('city')
   else if (key === '2') setView('graph')
   else if (key === '3') setView('strata')

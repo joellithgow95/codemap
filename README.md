@@ -53,6 +53,8 @@ code panel (blame gutter, dirty lines, history diffs, symbols); selected files d
 
 ## Camera and focus
 
+`?` opens the full list of keys and mouse controls.
+
 The camera HUD (bottom right) has presets: TOP (`T`, an orthographic top-down map that turns back
 into perspective once you orbit away), ISO (`I`), FRONT, SIDE, FRAME (`.`), ORTHO (`O`, sticky) and
 RESET (`Home`). The axis gizmo next to it swings the camera to look along the clicked axis.

@@ -23,6 +23,7 @@
     <div class="group-label">MODE</div>
     <button id="fly-toggle" class="chip">FLY <kbd>F</kbd></button>
     <button id="menu-open" class="chip">MENU <kbd>Esc</kbd></button>
+    <button id="keys-open" class="chip">KEYS <kbd>?</kbd></button>
   </nav>
 
   <aside id="hud-tree">
@@ -82,18 +83,23 @@
     <div id="panel-body"></div>
   </section>
 
-  <div id="menu" hidden>
+  <div id="menu" class="overlay" hidden>
     <div class="menu-card">
       <h1>DASH<span>//</span>CODEMAP</h1>
-      <div class="menu-grid">
-        <div>
-          <h2>Views</h2>
-          <div id="menu-views"></div>
-          <h2>Lens</h2>
-          <div id="menu-lenses"></div>
-          <h2>Codebase</h2>
-          <div id="menu-repos"></div>
-          <h2>Load from GitHub</h2>
+      <div class="menu-body">
+        <div id="current-repo">
+          <div id="current-name"></div>
+          <div id="current-meta" class="dim"></div>
+          <button id="rescan" class="chip">RESCAN</button>
+          <div id="rescan-status" class="dim"></div>
+        </div>
+        <div class="menu-row">
+          <h2>Codebases</h2>
+          <input id="repo-filter" class="field" placeholder="filter…  (Enter opens the first match)" autocomplete="off" spellcheck="false" />
+        </div>
+        <div id="menu-repos"></div>
+        <details id="gh-section">
+          <summary>Load from GitHub…</summary>
           <button id="gh-signin" class="chip wide" hidden>SIGN IN WITH GITHUB</button>
           <input id="gh-input" class="field" placeholder="owner/name or github.com URL" autocomplete="off" spellcheck="false" />
           <input id="gh-token" class="field" type="password" autocomplete="off" />
@@ -105,35 +111,61 @@
           <button id="gh-load" class="chip wide">LOAD REPO</button>
           <button id="gh-clear" class="chip wide" hidden>SIGN OUT / FORGET TOKEN</button>
           <div class="dim note">Tokens stay in this tab and are only sent to api.github.com.</div>
-          <h2>Data</h2>
-          <button id="rescan" class="chip wide">RESCAN REPO</button>
-          <div id="rescan-status" class="dim"></div>
+        </details>
+      </div>
+      <div class="menu-foot">
+        <button id="menu-keys" class="chip">KEYS <kbd>?</kbd></button>
+        <button id="menu-resume" class="chip big">RESUME <kbd>Esc</kbd></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="keys" class="overlay" hidden>
+    <div class="menu-card keys-card">
+      <h1>KEYS</h1>
+      <div class="keys-grid">
+        <div>
+          <h2>Mouse</h2>
+          <table class="keys">
+            <tr><td>drag</td><td>orbit</td></tr>
+            <tr><td>right-drag</td><td>pan</td></tr>
+            <tr><td>wheel</td><td>zoom to cursor</td></tr>
+            <tr><td>click</td><td>open file</td></tr>
+            <tr><td>double-click</td><td>focus its folder, again: fly to it</td></tr>
+            <tr><td>folder label</td><td>focus folder</td></tr>
+          </table>
+          <div class="dim note">Top-down map: drag pans, right-drag rotates.</div>
         </div>
         <div>
-          <h2>Controls</h2>
+          <h2>Camera</h2>
           <table class="keys">
-            <tr><td>Left drag</td><td>orbit (top-down map: pan)</td></tr>
-            <tr><td>Right drag / Shift+drag</td><td>pan (top-down map: rotate)</td></tr>
-            <tr><td>Wheel</td><td>zoom</td></tr>
-            <tr><td>Click</td><td>select file, open code</td></tr>
-            <tr><td>Double click</td><td>focus the file's folder (again: fly to the file)</td></tr>
-            <tr><td>Click folder label</td><td>focus that folder</td></tr>
-            <tr><td><kbd>Backspace</kbd></td><td>focus up one folder</td></tr>
-            <tr><td><kbd>T</kbd> <kbd>I</kbd></td><td>top-down map / three-quarter view</td></tr>
-            <tr><td><kbd>.</kbd></td><td>frame selection or focused folder</td></tr>
-            <tr><td><kbd>O</kbd></td><td>orthographic / perspective</td></tr>
-            <tr><td><kbd>Home</kbd></td><td>reset: whole repo, three-quarter view</td></tr>
-            <tr><td><kbd>F</kbd></td><td>free-fly (WASD, Q/E, Shift = fast)</td></tr>
-            <tr><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></td><td>city / graph / strata</td></tr>
-            <tr><td><kbd>L</kbd></td><td>cycle lens</td></tr>
+            <tr><td><kbd>T</kbd></td><td>top-down map</td></tr>
+            <tr><td><kbd>I</kbd></td><td>three-quarter</td></tr>
+            <tr><td><kbd>.</kbd></td><td>frame selection</td></tr>
+            <tr><td><kbd>O</kbd></td><td>ortho / perspective</td></tr>
+            <tr><td><kbd>Home</kbd></td><td>reset</td></tr>
+            <tr><td><kbd>F</kbd></td><td>free-fly: WASD, Q/E, Shift</td></tr>
+          </table>
+        </div>
+        <div>
+          <h2>Time</h2>
+          <table class="keys">
             <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>step commit</td></tr>
             <tr><td><kbd>Space</kbd></td><td>play history</td></tr>
+          </table>
+          <h2>Focus</h2>
+          <table class="keys">
+            <tr><td><kbd>Backspace</kbd></td><td>up one folder</td></tr>
             <tr><td><kbd>/</kbd></td><td>search files</td></tr>
-            <tr><td><kbd>Esc</kbd></td><td>menu / close panel</td></tr>
+          </table>
+          <h2>View</h2>
+          <table class="keys">
+            <tr><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></td><td>city / graph / strata</td></tr>
+            <tr><td><kbd>L</kbd></td><td>cycle lens</td></tr>
+            <tr><td><kbd>Esc</kbd></td><td>close panel / menu</td></tr>
           </table>
         </div>
       </div>
-      <button id="menu-resume" class="chip wide big">RESUME</button>
     </div>
   </div>
 

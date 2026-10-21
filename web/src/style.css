@@ -119,13 +119,40 @@ body.panel-open #hud-timeline { right: calc(min(46vw, 760px) + 16px); }
 .symrow { padding-left: calc(12px + var(--depth, 0) * 16px); }
 .symkind { color: var(--magenta); width: 54px; flex: none; }
 
-#menu { position: fixed; inset: 0; z-index: 40; background: rgba(2, 5, 12, 0.82); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-.menu-card { width: min(760px, 92vw); border: 1px solid var(--cyan); background: rgba(3, 10, 20, 0.95); padding: 24px 28px; box-shadow: 0 0 40px rgba(0, 240, 255, 0.25); }
-.menu-card h1 { margin: 0 0 14px; letter-spacing: 0.3em; color: var(--cyan); font-weight: normal; }
+.overlay { position: fixed; inset: 0; z-index: 40; background: rgba(2, 5, 12, 0.82); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); padding: 16px; }
+/* Capped at the viewport; only .menu-body scrolls, so the title and RESUME stay put. */
+.menu-card { width: min(520px, 92vw); max-height: 100%; display: flex; flex-direction: column; border: 1px solid var(--cyan); background: rgba(3, 10, 20, 0.95); padding: 20px 24px; box-shadow: 0 0 40px rgba(0, 240, 255, 0.25); }
+.menu-card h1 { margin: 0 0 12px; letter-spacing: 0.3em; color: var(--cyan); font-weight: normal; flex: none; }
 .menu-card h2 { margin: 14px 0 6px; font-size: 10px; letter-spacing: 0.2em; color: var(--magenta); font-weight: normal; }
-.menu-grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 28px; }
-#menu-views, #menu-lenses { display: flex; flex-direction: column; gap: 4px; }
-.keys td { padding: 2px 10px 2px 0; }
+.menu-body { flex: 1; min-height: 0; overflow: auto; }
+.menu-foot { flex: none; display: flex; gap: 8px; margin-top: 14px; }
+.menu-foot #menu-resume { flex: 1; margin-top: 0; }
+
+#current-repo { display: grid; grid-template-columns: 1fr auto; column-gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); background: rgba(0, 240, 255, 0.04); }
+#current-name { color: #fff; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#current-meta { grid-column: 1; }
+#rescan { grid-column: 2; grid-row: 1 / span 2; }
+#rescan-status { grid-column: 1 / span 2; }
+#rescan-status:empty { display: none; }
+.menu-row { display: flex; align-items: center; gap: 12px; }
+.menu-row h2 { flex: none; }
+.menu-row .field { margin: 8px 0 0; padding: 3px 8px; }
+
+#menu-repos { display: flex; flex-direction: column; }
+.repo-row { display: flex; gap: 10px; padding: 5px 8px; color: var(--ice); text-decoration: none; border-left: 2px solid transparent; }
+.repo-row:hover { background: rgba(0, 240, 255, 0.1); color: #fff; }
+.repo-row.current { border-left-color: var(--cyan); color: var(--cyan); background: rgba(0, 240, 255, 0.06); }
+.repo-row .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.repo-row .tag { color: var(--magenta); font-size: 10px; letter-spacing: 0.1em; }
+
+#gh-section { margin-top: 14px; }
+#gh-section summary { cursor: pointer; color: var(--magenta); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; }
+#gh-section summary:hover { color: #fff; }
+
+.keys-card { width: min(860px, 94vw); }
+.keys-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0 28px; overflow: auto; }
+.keys-grid h2:first-child { margin-top: 0; }
+.keys td { padding: 2px 10px 2px 0; vertical-align: top; }
 .keys td:first-child { white-space: nowrap; color: var(--cyan); }
 
 #search { position: fixed; top: 18%; left: 50%; transform: translateX(-50%); width: min(560px, 90vw); z-index: 50; background: rgba(3, 10, 20, 0.97); border: 1px solid var(--cyan); box-shadow: 0 0 30px rgba(0, 240, 255, 0.3); }

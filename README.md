@@ -91,6 +91,16 @@ there is no blame, renames are found only when the contents are identical, and a
 submodule (where `.git` is a pointer file) opens without history. Chrome, Edge and Arc read the folder lazily. Firefox and Safari read every file in it up
 front, `node_modules` included, so use Chrome for big repos.
 
+## Feedback
+
+**FEEDBACK** (under KEYS, and in the menu) opens a prefilled new-issue page on GitHub in a new tab.
+It has a "what happened / what I expected" section and a short context block: app version, view,
+camera, lens and your browser. The repo name is added only for the bundled demos and for public
+repos loaded from GitHub without a token; a local scan or picked folder is never named. Nothing is
+sent by the app: you review the text and submit it from your own GitHub account. Without the app,
+use **New issue → Feedback** on the repository. If the repository moves, change `FEEDBACK_REPO` in
+`web/src/feedback.js` and the link in `.github/ISSUE_TEMPLATE/config.yml`.
+
 ## Deploy your own (Netlify)
 
 `netlify.toml` builds `web/`, serves `web/dist`, sets the security headers and deploys one function,

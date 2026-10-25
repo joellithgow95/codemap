@@ -20,6 +20,7 @@ picked folder ─ web/src/local.js ───┘   (reads the folder's .git in th
 | `web/` | The app: Vite config, dev-server endpoints, npm scripts, demo maps | [`web/AGENTS.md`](web/AGENTS.md) |
 | `web/src/` | App source: scene, HUD, GitHub and local-folder loaders, git reader, parsers, highlighter | [`web/src/AGENTS.md`](web/src/AGENTS.md) |
 | `web/netlify/functions/` | The one server-side piece: GitHub OAuth code → token exchange | [`web/netlify/functions/AGENTS.md`](web/netlify/functions/AGENTS.md) |
+| `.github/ISSUE_TEMPLATE/` | Issue form for feedback filed directly (same sections as the in-app button) and the security contact link | |
 | `netlify.toml` | Build, publish dir, functions dir, security headers and CSP | this file |
 | `docs/` | README screenshots (taken from public demo maps only) | |
 | `THIRD_PARTY_NOTICES.md` | Licenses of the bundled demo maps | |
@@ -55,6 +56,9 @@ scanner. Check behaviour by running the app.
   the shape).
 - **Picked folders stay in the tab.** `local.js` reads files through the browser's folder picker
   and never sends them anywhere; the CSP's `connect-src` backs that up.
+- **Feedback never leaks a private repo.** The FEEDBACK button opens a prefilled GitHub issue URL.
+  It names the loaded repo only for bundled demos and token-less GitHub loads, never for scans or
+  picked folders.
 - **Tokens stay in the tab.** The GitHub token goes only to `api.github.com`, is never logged and is
   never persisted beyond `sessionStorage`.
 - **Demo maps are third-party content.** Only public repos whose license allows redistribution,

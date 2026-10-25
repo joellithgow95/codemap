@@ -8,6 +8,7 @@ import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRe
 import { ViewHelper } from 'three/examples/jsm/helpers/ViewHelper.js'
 
 import { LANG_COLORS, buildModel, existsAt, layoutCity, layoutGraph, locAt, stateAt } from './data.js'
+import { feedbackUrl } from './feedback.js'
 import { highlightLines } from './highlight.js'
 import { extractSymbols } from './parse.js'
 import { GithubError, fetchText, loadGithub, parseRepoSpec } from './github.js'
@@ -129,7 +130,7 @@ async function loadSource() {
       const folder = await chooseFolder()
       showLoading(`opening ${folder.name}`)
       const doc = await loadLocal(folder, { commitLimit: Number(params.get('n') ?? 50), onProgress: showLoading })
-      return { doc, ctx: null, name: doc.repo, manifest: await loadManifests() }
+      return { doc, ctx: null, name: doc.repo, manifest: await loadManifests(), publicName: null }
     } catch (error) {
       await stall(error instanceof LocalError ? error.message : `Load failed: ${error.message}`)
     }
@@ -143,7 +144,9 @@ async function loadSource() {
         commitLimit: Number(params.get('n') ?? 50),
         onProgress: showLoading,
       })
-      return { doc, ctx, name: `${doc.owner}/${doc.repo}`, manifest: await loadManifests() }
+      // Without a token GitHub only serves public repos; with one the repo may be private.
+      const name = `${doc.owner}/${doc.repo}`
+      return { doc, ctx, name, manifest: await loadManifests(), publicName: token ? null : name }
     } catch (error) {
       await stall(error instanceof GithubError ? error.message : `Load failed: ${error.message}`)
     }
@@ -154,7 +157,8 @@ async function loadSource() {
   const entry = manifest.find((m) => m.name === requested) ?? manifest[0]
   showLoading(`loading ${entry.name}`)
   const doc = await (await fetch(`${entry.base}${entry.name}.json?t=${Date.now()}`)).json()
-  return { doc, ctx: null, name: entry.name, manifest }
+  // Only the bundled demo maps are known to be public; a scan in local-maps/ may be private.
+  return { doc, ctx: null, name: entry.name, manifest, publicName: entry.base === '/demo/' ? entry.label ?? entry.name : null }
 }
 
 async function loadManifests() {
@@ -1283,6 +1287,25 @@ function toggleMenu(open) {
   renderRepos()
   if (!$('repo-filter').hidden) $('repo-filter').focus()
 }
+// The links are plain anchors (target=_blank, noopener): a form would hit `form-action 'none'`,
+// but following a link is not restricted by the CSP. The href is rebuilt whenever the user is about
+// to use it, so it reflects the current view, lens and camera.
+function refreshFeedback() {
+  const href = feedbackUrl({
+    version: typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '',
+    view: state.view,
+    camera: camera.isOrthographicCamera ? 'orthographic' : 'perspective',
+    lens: state.lens,
+    repo: source.publicName,
+    userAgent: navigator.userAgent,
+  })
+  document.querySelectorAll('a.feedback').forEach((a) => (a.href = href))
+}
+document.querySelectorAll('a.feedback').forEach((a) => {
+  for (const type of ['pointerdown', 'focus', 'click', 'contextmenu']) a.addEventListener(type, refreshFeedback)
+})
+refreshFeedback()
+
 function toggleKeys(open) {
   $('keys').hidden = !open
 }

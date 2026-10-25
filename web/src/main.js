@@ -5,6 +5,9 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
+import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
+import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { ViewHelper } from 'three/examples/jsm/helpers/ViewHelper.js'
 
 import { LANG_COLORS, buildModel, existsAt, layoutCity, layoutGraph, locAt, stateAt } from './data.js'
@@ -379,12 +382,18 @@ const districtLabels = city.districts.map((d) => {
   return { obj, district: d }
 })
 
-const unitOutline = new THREE.EdgesGeometry(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2))
+// District borders are screen-space quads, not GL lines: a GL line is 1px wide and unsmoothed on many
+// GPUs even with MSAA, so it crawls while the map pans. These get a shader-antialiased width instead.
+const unitOutline = new LineSegmentsGeometry().setPositions([-0.5, 0, -0.5, 0.5, 0, -0.5, 0.5, 0, -0.5, 0.5, 0, 0.5, 0.5, 0, 0.5, -0.5, 0, 0.5, -0.5, 0, 0.5, -0.5, 0, -0.5])
+// Wider than a GL line, so dimmer: the bloom pass would otherwise wash the whole city in magenta.
+const OUTLINE_GAIN = 0.45
+const outlineMats = []
 const floorOutlines = new THREE.Group()
 city.districts.forEach((d) => {
   const base = new THREE.Color(d.depth === 1 ? 0xff2bd6 : 0x0f6a80)
-  const mat = new THREE.LineBasicMaterial({ color: base, transparent: true, opacity: 0.8 })
-  const line = new THREE.LineSegments(unitOutline, mat)
+  const mat = new LineMaterial({ color: base, transparent: true, opacity: 0.8, linewidth: 1 })
+  outlineMats.push(mat)
+  const line = new LineSegments2(unitOutline, mat)
   floorOutlines.add(line)
   d.outline = { line, mat, base }
 })
@@ -1455,6 +1464,7 @@ function resize() {
   renderer.setSize(innerWidth, innerHeight, false)
   composer.setSize(innerWidth, innerHeight)
   labels.setSize(innerWidth, innerHeight)
+  outlineMats.forEach((m) => m.resolution.set(innerWidth, innerHeight))
   const aspect = innerWidth / innerHeight
   perspCamera.aspect = aspect
   orthoCamera.left = -ORTHO_HALF * aspect
@@ -1598,7 +1608,7 @@ function updateDistricts(ease) {
     const ancestor = state.focus.startsWith(`${d.path}/`)
     const hot = d === hotDistrict
     d.outline.mat.color.copy(hot ? HOT_COLOR : d.path === state.focus ? FOCUS_COLOR : d.outline.base)
-    d.outline.mat.opacity = hot || d.path === state.focus ? 1 : inside || ancestor ? 0.8 : 0.8 * GHOST_OPACITY
+    d.outline.mat.opacity = OUTLINE_GAIN * (hot || d.path === state.focus ? 1 : inside || ancestor ? 0.8 : 0.8 * GHOST_OPACITY)
     d.label.classList.toggle('hot', hot)
     d.label.style.opacity = inside || ancestor ? '' : String(GHOST_OPACITY + 0.15)
     obj.visible =

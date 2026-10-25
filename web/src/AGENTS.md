@@ -42,6 +42,8 @@ HUD renderers (`renderTree`, panel views, legend) → menu, keys overlay and sea
 
 ## Rules
 
+- **Borders that pan are fat lines.** District outlines use `LineSegments2`/`LineMaterial` (shader-antialiased, width in px), not `LineBasicMaterial`: a GL line is 1px and unsmoothed on many GPUs even with MSAA, so it crawls while panning. Keep their opacity low (`OUTLINE_GAIN`) or the bloom pass floods the city.
+
 - **Feedback is a link, never a request.** FEEDBACK opens `feedback.js`'s URL in a new tab
   (`<a target="_blank" rel="noopener noreferrer">`), so there is no token, API call or CSP change.
   Don't turn it into a form (`form-action 'none'`) or a `fetch`. The map's repo name goes into the

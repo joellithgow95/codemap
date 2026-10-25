@@ -255,7 +255,8 @@ viewHelper.setLabels('X', 'Y', 'Z')
 // Set while the gizmo's own axis animation runs, so its end can be handled once.
 let gizmoMoving = false
 
-const composer = new EffectComposer(renderer)
+// The composer draws into its own target, so the renderer's antialias flag does nothing here: multisample the target.
+const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(innerWidth, innerHeight, { type: THREE.HalfFloatType, samples: 4 }))
 const renderPass = new RenderPass(scene, camera)
 composer.addPass(renderPass)
 const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.85, 0.55, 0.08)

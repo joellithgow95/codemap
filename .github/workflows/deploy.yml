@@ -1,0 +1,38 @@
+name: Deploy
+
+# Redeploys the production site on Netlify. Needs two repo secrets: NETLIFY_AUTH_TOKEN (a Netlify
+# personal access token) and NETLIFY_SITE_ID (Site configuration > Site ID).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Read-only token: the deploy talks to Netlify, never to the repo.
+permissions:
+  contents: read
+
+# Never run two deploys at once, and let a running one finish rather than cancel it half-published.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # Actions are pinned to commit SHAs (tag in the comment) so a moved tag can't change what runs.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
+      # --build runs the netlify.toml build command and bundles the functions, so the deploy matches
+      # what Netlify's own build would publish (including the OAuth token function).
+      - name: Build and deploy to production
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: npx --yes netlify-cli@27.14.2 deploy --build --prod

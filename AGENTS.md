@@ -21,7 +21,7 @@ picked folder ─ web/src/local.js ───┘   (reads the folder's .git in th
 | `web/src/` | App source: scene, HUD, GitHub and local-folder loaders, git reader, parsers, highlighter | [`web/src/AGENTS.md`](web/src/AGENTS.md) |
 | `web/netlify/functions/` | The one server-side piece: GitHub OAuth code → token exchange | [`web/netlify/functions/AGENTS.md`](web/netlify/functions/AGENTS.md) |
 | `.github/ISSUE_TEMPLATE/` | Issue form for feedback filed directly (same sections as the in-app button) and the security contact link | |
-| `.github/workflows/` | `ci.yml` builds and checks; `deploy.yml` redeploys to Netlify (secrets `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`) | |
+| `.github/workflows/` | `ci.yml` builds and checks; `labels.yml` creates the issue labels the feedback link applies; `deploy.yml` redeploys to Netlify (secrets `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`) | |
 | `netlify.toml` | Build, publish dir, functions dir, security headers and CSP | this file |
 | `docs/` | README screenshots (taken from public demo maps only) | |
 | `THIRD_PARTY_NOTICES.md` | Licenses of the bundled demo maps | |

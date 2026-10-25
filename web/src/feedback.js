@@ -5,6 +5,9 @@
 // The one place the issue tracker is named. Change it if the repository moves or is renamed.
 export const FEEDBACK_REPO = 'joellithgow95/codemap'
 
+// Applied by GitHub only if the label already exists; .github/workflows/labels.yml creates them.
+const LABELS = ['feedback', 'from-app']
+
 const MAX_URL = 7000
 const MAX_NAME = 100
 
@@ -13,7 +16,7 @@ const MAX_NAME = 100
 // share, so a private repo's name must never get here.
 export function feedbackUrl(context) {
   const title = 'Feedback: '
-  const head = '### What happened / what I expected\n\n\n\n### Context\n'
+  const head = '### What happened / what I expected\n\n\n\n### Steps to reproduce (if it is a bug)\n\n\n\n### Context\n'
   const fields = [
     ['App version', context.version],
     ['View', context.view],
@@ -24,7 +27,7 @@ export function feedbackUrl(context) {
   ].filter(([, value]) => value)
   const build = (count) =>
     `https://github.com/${FEEDBACK_REPO}/issues/new?` +
-    new URLSearchParams({ title, body: head + fields.slice(0, count).map(([k, v]) => `- ${k}: ${v}`).join('\n') + '\n' })
+    new URLSearchParams({ title, labels: LABELS.join(','), body: head + fields.slice(0, count).map(([k, v]) => `- ${k}: ${v}`).join('\n') + '\n' })
   // Drop context from the end (the long user agent first) until the URL fits.
   let count = fields.length
   let url = build(count)

@@ -127,6 +127,11 @@ token). To add the **Sign in with GitHub** button:
 For local sign-in, copy `web/.env.example` to `web/.env.local`; `npm run dev` serves the same
 function.
 
+To redeploy from GitHub instead of Netlify's own Git integration, `.github/workflows/deploy.yml`
+runs `netlify deploy --build --prod` on every push to `main` and on manual **Run workflow**. Add the
+repo secrets `NETLIFY_AUTH_TOKEN` (a Netlify personal access token) and `NETLIFY_SITE_ID`; if
+Netlify also builds from Git, turn that off so the two don't race.
+
 The demo maps shipped with the site live in `web/public/demo/`. Add one with
 `GITHUB_TOKEN=... npm run demo -- owner/name 60`, for a **public** repo only.
 

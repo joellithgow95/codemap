@@ -35,8 +35,8 @@ Press `?` in the app for every key and mouse control.
 - **Folder tree** (top left): the repo at the current commit, each folder with its count of added,
   modified and deleted files. CHANGED hides untouched files.
 - **Focus**: click a folder in the tree, click a folder label in the scene, or double-click a tower
-  to focus its folder. The rest of the city slides away and fades; `Backspace` or the breadcrumb
-  goes back up.
+  to focus its folder. The rest of the city slides away and fades; `Backspace`, `Esc` (with nothing selected) or the
+  breadcrumb goes back up; `Esc` at the top level opens the menu.
 - `/` searches files, `←` `→` step commits, `Space` plays the history, `F` free-flies (WASD).
 
 ## Run it locally

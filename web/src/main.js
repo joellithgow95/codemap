@@ -1364,6 +1364,7 @@ window.addEventListener('keydown', (e) => {
   if (key === 'escape') {
     if (!$('menu').hidden) toggleMenu(false)
     else if (state.selected) select(null)
+    else if (state.focus) focusUp()
     else toggleMenu(true)
     return
   }

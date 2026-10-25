@@ -11,6 +11,7 @@
 | `git.js` | Read-only `.git` reader for `local.js`: HEAD and refs, loose objects, packfiles and delta chains, inflated with the native `DecompressionStream` |
 | `parse.js` | Language detection, symbol and import extraction, and the file-size limits shared by the browser loaders (the scanner has its own in Python) |
 | `highlight.js` | Regex syntax highlighter for the code panel; escapes everything it emits |
+| `feedback.js` | Builds the FEEDBACK link: a prefilled new-issue URL on GitHub (`FEEDBACK_REPO` is the one place the tracker is named). No network access: the app only builds a link |
 | `style.css` | HUD styling (Tron palette in `:root` variables) |
 
 ## The map document
@@ -40,6 +41,12 @@ HUD renderers (`renderTree`, panel views, legend) → menu, keys overlay and sea
 `frame()`.
 
 ## Rules
+
+- **Feedback is a link, never a request.** FEEDBACK opens `feedback.js`'s URL in a new tab
+  (`<a target="_blank" rel="noopener noreferrer">`), so there is no token, API call or CSP change.
+  Don't turn it into a form (`form-action 'none'`) or a `fetch`. The map's repo name goes into the
+  URL only for a bundled demo or a GitHub load made without a token (`source.publicName` in
+  `main.js`); scans, picked folders and anything unsure leave it out.
 
 - **Escape everything from a repo.** Paths, names, commit subjects, authors and dates go through
   `esc()` before `innerHTML`. `esc()` covers quotes, so it is safe in quoted attributes too.

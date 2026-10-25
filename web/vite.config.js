@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { basename, resolve } from 'node:path'
 import { defineConfig, loadEnv } from 'vite'
 
+const { version } = JSON.parse(readFileSync(resolve(import.meta.dirname, 'package.json'), 'utf8'))
 const scanner = resolve(import.meta.dirname, '../scan/scan.py')
 const outDir = resolve(import.meta.dirname, 'local-maps')
 
@@ -62,5 +63,5 @@ const rescan = () => ({
 
 export default defineConfig(({ mode }) => {
   Object.assign(process.env, loadEnv(mode, import.meta.dirname, ''))
-  return { plugins: [rescan(), netlifyFunctions()], server: { host: '127.0.0.1', port: 5179 } }
+  return { define: { __APP_VERSION__: JSON.stringify(version) }, plugins: [rescan(), netlifyFunctions()], server: { host: '127.0.0.1', port: 5179 } }
 })

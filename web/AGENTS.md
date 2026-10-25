@@ -13,7 +13,7 @@ The browser app, its build, and its dev-only server endpoints.
 | `public/demo/` | Demo maps that ship with the site, plus their `manifest.json`. Third-party content: see `THIRD_PARTY_NOTICES.md` |
 | `local-maps/` | **Git-ignored.** Local scans (full source). Served at `/maps/` by the dev server only |
 | `.env.example` | OAuth variables for local sign-in; copy to `.env.local` (git-ignored) |
-| `vite.config.js` | Dev server on 127.0.0.1:5179 plus the dev-only middleware below |
+| `vite.config.js` | Dev server on 127.0.0.1:5179, the dev-only middleware below, and `__APP_VERSION__` (from `package.json`) defined for the feedback link |
 
 ## Dev-only endpoints (`vite.config.js`)
 

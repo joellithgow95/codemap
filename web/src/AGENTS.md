@@ -6,7 +6,7 @@
 |--------|------|
 | `main.js` | Everything on screen: loads a map, builds the Three.js scene, runs the frame loop, renders the HUD panels, handles input |
 | `data.js` | Pure model code: `buildModel` (per-file history across renames, lines at each commit), `buildTree`, `layoutCity` (treemap → tower and district boxes), `layoutGraph` (force layout of imports) |
-| `github.js` | Builds a map document in the browser from the GitHub API + raw content host |
+| `github.js` | Builds a map document in the browser from the GitHub API + raw content host; with `spec.pull` the history is that PR's commits over the tree at its head, and `listPulls` feeds the menu's PR picker |
 | `local.js` | Builds a map document from a folder the user picks (`showDirectoryPicker`, or `<input webkitdirectory>`): `.gitignore`-aware walk, last N first-parent commits diffed with jsdiff, working tree vs HEAD by blob hash |
 | `git.js` | Read-only `.git` reader for `local.js`: HEAD and refs, loose objects, packfiles and delta chains, inflated with the native `DecompressionStream` |
 | `parse.js` | Language detection, symbol and import extraction, and the file-size limits shared by the browser loaders (the scanner has its own in Python) |
@@ -19,7 +19,7 @@ Produced by `scan/scan.py` (local), `github.js` (`source: 'github'`) and `local.
 (`source: 'local'`). All three must stay compatible.
 
 ```
-{ repo, head, branch, generated, [source, owner, truncated, treeTruncated],
+{ repo, head, branch, generated, [source, owner, truncated, treeTruncated, pull],
   commits: [ { sha, short, author, date, subject,
                files: [ { path, old, add, del, status, patch, truncated } ] } ],   // oldest first
   files:   [ { path, lang, loc, bytes, text, symbols, imports, commits, added, deleted,
@@ -32,7 +32,7 @@ working-tree state (`clean` for GitHub loads; `clean`, `modified` or `untracked`
 
 ## main.js layout
 
-Top to bottom: load (OAuth completion, `?local` folder picker / `?gh=` / `?repo=` / manifests) → model and layouts → scene
+Top to bottom: load (OAuth completion, `?local` folder picker / `?gh=` (+ `&pr=`) / `?repo=` / manifests) → model and layouts → scene
 objects (towers, nodes, strata slabs, district outlines and labels) → `applyState()` (recolour and
 resize for the current commit, lens and focus) → camera (presets, `fitView`, ortho/perspective
 swap, map-mode controls) → focus (`computeFocus` pushes sibling folders apart as rigid blocks) →

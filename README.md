@@ -71,6 +71,14 @@ commits and their diffs from the GitHub API, and file contents from `raw.githubu
 Nothing is cloned and there is no backend in the loop. Without a token GitHub allows 60 API calls
 an hour. A token (sign in, or paste one) raises that to 5,000 and reaches private repos.
 
+### Open pull requests
+
+To see how a PR changes the map, use "Browse open PRs" in the same menu section (it lists the typed
+repo, or the one on screen), or open `?gh=owner/name&pr=123`. `owner/name#123` and
+`github.com/owner/name/pull/123` URLs work in the input too. The city is the tree at the PR's head
+and the timeline is the PR's own commits (up to 100), so the CHANGE lens and the commit slider
+show exactly what the PR touches. Fork PRs load through the base repo.
+
 Tokens are kept in the tab's `sessionStorage` and sent only to `api.github.com`. The live site's
 Content-Security-Policy only lets the page talk to itself, the GitHub API and the raw-content
 host.

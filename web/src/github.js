@@ -22,10 +22,10 @@ export class GithubError extends Error {}
 
 export function parseRepoSpec(input) {
   const text = input.trim().replace(/\.git$/, '').replace(/\/$/, '')
-  const url = /github\.com[/:]([^/\s]+)\/([^/\s#?]+)(?:\/tree\/([^\s#?]+))?/.exec(text)
-  if (url) return { owner: url[1], repo: url[2], ref: url[3] ?? null }
-  const short = /^([\w.-]+)\/([\w.-]+)(?:@(.+))?$/.exec(text)
-  if (short) return { owner: short[1], repo: short[2], ref: short[3] ?? null }
+  const url = /github\.com[/:]([^/\s]+)\/([^/\s#?]+)(?:\/tree\/([^\s#?]+)|\/pull\/(\d+))?/.exec(text)
+  if (url) return { owner: url[1], repo: url[2], ref: url[3] ?? null, pull: url[4] ? Number(url[4]) : null }
+  const short = /^([\w.-]+)\/([\w.-]+?)(?:@(.+)|#(\d+))?$/.exec(text)
+  if (short) return { owner: short[1], repo: short[2], ref: short[3] ?? null, pull: short[4] ? Number(short[4]) : null }
   throw new GithubError(`Can't read "${input}" as a GitHub repo. Use owner/name or a github.com URL.`)
 }
 
@@ -101,16 +101,36 @@ function toCommitFile(f) {
   }
 }
 
+// Open PRs, newest activity first. One page is enough for a picker.
+export async function listPulls(spec, token = '') {
+  const ctx = { owner: spec.owner, repo: spec.repo, token, remaining: null }
+  const pulls = await api(ctx, `/repos/${ctx.owner}/${ctx.repo}/pulls?state=open&sort=updated&per_page=30`)
+  return pulls.map((p) => ({ number: p.number, title: p.title, author: p.user?.login ?? 'unknown', draft: p.draft, updated: p.updated_at }))
+}
+
 export async function loadGithub(spec, { token = '', commitLimit = 50, onProgress = () => {} } = {}) {
   const ctx = { owner: spec.owner, repo: spec.repo, token, remaining: null, commit: null }
 
   onProgress('repository', 0, 1)
   const meta = await api(ctx, `/repos/${ctx.owner}/${ctx.repo}`)
-  const ref = spec.ref ?? meta.default_branch
+  let ref = spec.ref ?? meta.default_branch
 
-  onProgress('commit list', 0, 1)
-  const listed = await api(ctx, `/repos/${ctx.owner}/${ctx.repo}/commits?sha=${encodeURIComponent(ref)}&per_page=${Math.min(commitLimit, 100)}`)
-  if (!listed.length) throw new GithubError(`${ctx.owner}/${ctx.repo} has no commits on ${ref}.`)
+  // A PR is mapped as its own commits over the tree at its head, so stepping
+  // through history shows what the PR changes. The API caps this endpoint at 250 commits.
+  let pull = null
+  let listed
+  if (spec.pull) {
+    onProgress('pull request', 0, 1)
+    const pr = await api(ctx, `/repos/${ctx.owner}/${ctx.repo}/pulls/${spec.pull}`)
+    pull = { number: pr.number, title: pr.title, state: pr.merged ? 'merged' : pr.state, base: pr.base.ref, head: pr.head.label }
+    ref = `PR #${pr.number}`
+    listed = (await api(ctx, `/repos/${ctx.owner}/${ctx.repo}/pulls/${pr.number}/commits?per_page=100`)).reverse().slice(0, commitLimit)
+    if (!listed.length) throw new GithubError(`PR #${pr.number} has no commits.`)
+  } else {
+    onProgress('commit list', 0, 1)
+    listed = await api(ctx, `/repos/${ctx.owner}/${ctx.repo}/commits?sha=${encodeURIComponent(ref)}&per_page=${Math.min(commitLimit, 100)}`)
+    if (!listed.length) throw new GithubError(`${ctx.owner}/${ctx.repo} has no commits on ${ref}.`)
+  }
   ctx.commit = listed[0].sha
 
   onProgress('file tree', 0, 1)
@@ -187,7 +207,8 @@ export async function loadGithub(spec, { token = '', commitLimit = 50, onProgres
     generated: new Date().toISOString(),
     source: 'github',
     owner: ctx.owner,
-    truncated: listed.length >= commitLimit,
+    truncated: !pull && listed.length >= commitLimit,
+    ...(pull && { pull }),
     treeTruncated: tree.truncated || blobs.length > MAX_TREE_FILES,
     commits,
     files,

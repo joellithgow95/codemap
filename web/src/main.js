@@ -10,7 +10,7 @@ import { ViewHelper } from 'three/examples/jsm/helpers/ViewHelper.js'
 import { LANG_COLORS, buildModel, existsAt, layoutCity, layoutGraph, locAt, stateAt } from './data.js'
 import { highlightLines } from './highlight.js'
 import { extractSymbols } from './parse.js'
-import { GithubError, fetchText, loadGithub, parseRepoSpec } from './github.js'
+import { GithubError, fetchText, listPulls, loadGithub, parseRepoSpec } from './github.js'
 import { LocalError, loadLocal, pickFolder } from './local.js'
 
 const $ = (id) => document.getElementById(id)
@@ -138,7 +138,9 @@ async function loadSource() {
   if (spec) {
     showLoading('connecting to GitHub')
     try {
-      const { doc, ctx } = await loadGithub(parseRepoSpec(spec), {
+      const parsed = parseRepoSpec(spec)
+      if (params.has('pr')) parsed.pull = Number(params.get('pr'))
+      const { doc, ctx } = await loadGithub(parsed, {
         token,
         commitLimit: Number(params.get('n') ?? 50),
         onProgress: showLoading,
@@ -1234,7 +1236,10 @@ function toast(msg) {
 }
 
 $('current-name').textContent = repoName
-$('current-meta').textContent = `${model.data.branch} @ ${model.data.head} · ${files.length} files · ${count} commits${model.data.truncated ? ' (latest)' : ''}`
+const pull = model.data.pull
+$('current-meta').textContent = pull
+  ? `PR #${pull.number} ${pull.title} · ${pull.head} → ${pull.base} · ${files.length} files · ${count} commits`
+  : `${model.data.branch} @ ${model.data.head} · ${files.length} files · ${count} commits${model.data.truncated ? ' (latest)' : ''}`
 if (ghCtx || model.data.source === 'local') $('rescan').hidden = true
 
 // The filter only appears once the list is long enough to need it.
@@ -1273,6 +1278,26 @@ $('gh-load').onclick = () => {
   const typed = $('gh-token').value.trim()
   if (typed) sessionStorage.setItem(TOKEN_KEY, typed)
   location.search = `?gh=${encodeURIComponent(target)}&n=${$('gh-limit').value}`
+}
+// Lists open PRs for the typed repo (or the one on screen). Picking one reloads as that PR.
+$('gh-prs').onclick = async () => {
+  const typed = $('gh-input').value.trim()
+  const list = $('gh-pr-list')
+  try {
+    const spec = parseRepoSpec(typed || (model.data.owner ? `${model.data.owner}/${model.data.repo}` : ''))
+    const typedToken = $('gh-token').value.trim()
+    if (typedToken) sessionStorage.setItem(TOKEN_KEY, typedToken)
+    list.textContent = 'loading…'
+    const pulls = await listPulls(spec, sessionStorage.getItem(TOKEN_KEY) ?? '')
+    const base = `${spec.owner}/${spec.repo}`
+    list.innerHTML = pulls.length
+      ? pulls
+          .map((p) => `<a class="repo-row" href="?gh=${encodeURIComponent(base)}&pr=${p.number}&n=${$('gh-limit').value}"><span class="nm">#${p.number} ${esc(p.title)}</span><span class="dim">${esc(p.author)}${p.draft ? ' · draft' : ''}</span></a>`)
+          .join('')
+      : '<div class="dim note">No open pull requests.</div>'
+  } catch (error) {
+    list.innerHTML = `<div class="dim note">${esc(error.message)}</div>`
+  }
 }
 $('gh-input').addEventListener('keydown', (e) => e.key === 'Enter' && $('gh-load').click())
 $('local-open').onclick = () => (location.search = `?local&n=${$('local-limit').value}`)

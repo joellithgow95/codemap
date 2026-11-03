@@ -872,6 +872,7 @@ function select(file, { focus = false } = {}) {
     renderPanel()
     $('panel').classList.remove('closed')
     document.body.classList.add('panel-open')
+    setPop('')
     if (focus) focusFile(file)
   } else {
     $('panel').classList.add('closed')
@@ -891,8 +892,20 @@ function fmtTooltip(file) {
     ${lastCommit ? `<div class="dim">last: ${lastCommit.short} ${esc(lastCommit.subject)}</div>` : ''}`
 }
 
+// Phone layout: the dock's buttons open one popover (views, files, camera, legend) at a time, and
+// touching the map closes it. On desktop the dock is display:none and data-pop has no CSS effect.
+function setPop(name) {
+  if (name) document.body.dataset.pop = name
+  else delete document.body.dataset.pop
+  document.querySelectorAll('#hud-dock [data-pop]').forEach((b) => b.classList.toggle('active', b.dataset.pop === name))
+}
+document.querySelectorAll('#hud-dock [data-pop]').forEach((b) => {
+  b.onclick = () => setPop(document.body.dataset.pop === b.dataset.pop ? '' : b.dataset.pop)
+})
+
 const mouse = { x: 0, y: 0, down: null, moved: false }
 renderer.domElement.addEventListener('pointerdown', (e) => {
+  setPop('')
   mouse.down = { x: e.clientX, y: e.clientY }
   if (state.mapMode && e.button === 0) renderer.domElement.style.cursor = 'grabbing'
 })
@@ -1472,6 +1485,7 @@ function renderGuide() {
   const g = state.guide
   el.hidden = !g && !guideUi.picker
   $('guide-open').classList.toggle('active', !el.hidden)
+  $('dock-guide').classList.toggle('active', !el.hidden)
   if (el.hidden) return
   const body = $('guide-body')
   if (g) {
@@ -1587,6 +1601,7 @@ function showStep(i) {
 async function initGuides() {
   guides = await loadGuides()
   $('guide-open').hidden = !guides.length
+  $('dock-guide').hidden = !guides.length
   const want = params.get('guide')
   if (!want) return
   const entry = guides.find((e) => e.id === want)
@@ -1595,6 +1610,10 @@ async function initGuides() {
 }
 
 $('guide-open').onclick = toggleGuide
+$('dock-guide').onclick = () => {
+  setPop('')
+  toggleGuide()
+}
 $('guide-close').onclick = closeGuide
 $('guide-prev').onclick = () => stepGuide(-1)
 $('guide-next').onclick = () => stepGuide(1)

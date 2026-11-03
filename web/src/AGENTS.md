@@ -13,7 +13,7 @@
 | `highlight.js` | Regex syntax highlighter for the code panel; escapes everything it emits |
 | `guide.js` | Pure (no DOM, no network): parses and validates guide YAML, resolves `path#symbol` anchors, maps a step's `commit` to a timeline index. Shared by the app and `scripts/check-guides.mjs` |
 | `feedback.js` | Builds the FEEDBACK link: a prefilled new-issue URL on GitHub (`FEEDBACK_REPO` is the one place the tracker is named). No network access: the app only builds a link |
-| `style.css` | HUD styling (Tron palette in `:root` variables) |
+| `style.css` | HUD styling (Tron palette in `:root` variables). The `max-width: 720px` block is the phone layout: a dock of toggles (`setPop` in `main.js`) opens one popover at a time, the guide and file panel are bottom sheets, no hover tooltip. Desktop rules sit above it and stay untouched |
 
 ## The map document
 

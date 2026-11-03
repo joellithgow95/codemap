@@ -22,7 +22,7 @@ stop is the working tree. Click a tower for the code panel: source with a blame 
 lines, per-commit diffs and symbols. A selected file draws arcs to what it imports and what imports
 it.
 
-![Focused on the tests folder: the rest of the city slides away and fades](docs/focus.jpg)
+![Focused on web/src: the rest of the city slides away and fades](docs/focus.jpg)
 
 ## Getting around
 

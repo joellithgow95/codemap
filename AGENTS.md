@@ -22,7 +22,7 @@ picked folder ─ web/src/local.js ───┘   (reads the folder's .git in th
 | `web/netlify/functions/` | The one server-side piece: GitHub OAuth code → token exchange | [`web/netlify/functions/AGENTS.md`](web/netlify/functions/AGENTS.md) |
 | `.codemap/guides/` | Guides: YAML walkthroughs of this repo, loaded by the app when it maps the repo. Validated in CI | [`web/src/guide.js`](web/src/guide.js) |
 | `.github/ISSUE_TEMPLATE/` | Issue form for feedback filed directly (same sections as the in-app button) and the security contact link | |
-| `.github/workflows/` | `ci.yml` builds and checks; `labels.yml` creates the issue labels the feedback link applies; `pr-map-link.yml` comments a viewer link on same-repo PRs; `deploy.yml` redeploys to Netlify (secrets `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`) | |
+| `.github/workflows/` | `ci.yml` builds and checks; `labels.yml` creates the issue labels the feedback link applies; `pr-map-link.yml` comments a viewer link on same-repo PRs; `preview.yml` deploys each same-repo PR to a Netlify draft URL (`pr-<n>--<site>.netlify.app`, same secrets as `deploy.yml`) and comments it; `deploy.yml` redeploys to Netlify (secrets `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`) | |
 | `netlify.toml` | Build, publish dir, functions dir, security headers and CSP | this file |
 | `docs/` | README screenshots (taken from public demo maps only) | |
 | `THIRD_PARTY_NOTICES.md` | Licenses of the bundled demo maps | |

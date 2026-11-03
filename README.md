@@ -6,7 +6,7 @@ folder from your own disk, or scan a local checkout.
 
 **Live:** https://codemap-3d.netlify.app · Try a repo: `https://codemap-3d.netlify.app/?gh=owner/name`
 
-![City view of simonw/shot-scraper, coloured by language](docs/city.jpg)
+![City view of joellithgow95/codemap, coloured by language](docs/city.jpg)
 
 ## What it shows
 

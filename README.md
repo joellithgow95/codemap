@@ -133,7 +133,8 @@ repo secrets `NETLIFY_AUTH_TOKEN` (a Netlify personal access token) and `NETLIFY
 Netlify also builds from Git, turn that off so the two don't race.
 
 The demo maps shipped with the site live in `web/public/demo/`. Add one with
-`GITHUB_TOKEN=... npm run demo -- owner/name 60`, for a **public** repo only.
+`GITHUB_TOKEN=... npm run demo -- owner/name 60`, for a **public** repo only. The default demo (what loads with no
+`?repo=`) is CodeMap itself: `DEFAULT_DEMO` in `web/src/main.js`.
 
 ## Project layout
 

@@ -1,0 +1,51 @@
+version: 1
+title: How a repo becomes a city
+summary: Three producers emit one map document; the browser app renders it.
+steps:
+  - title: One document, three producers
+    view: city
+    lens: language
+    focus:
+      - scan/scan.py#build
+      - web/src/github.js#loadGithub
+      - web/src/local.js#loadLocal
+    note: >
+      A local checkout (scan.py), a GitHub repo (github.js) and a picked folder (local.js) all
+      emit the same JSON map document. Add a field to one and you add it to all three.
+
+  - title: The local scanner
+    focus:
+      - scan/scan.py#build
+      - scan/scan.py#python_symbols
+    note: >
+      Python standard library only. It shells out to git for history and blame, and writes the
+      full source of the repo into web/local-maps/, which is git-ignored and never deployed.
+
+  - title: The browser loaders
+    focus:
+      - web/src/github.js#loadGithub
+      - web/src/local.js#loadLocal
+      - web/src/parse.js#extractSymbols
+    note: >
+      Both run entirely in the tab and share parse.js for languages, symbols and imports.
+      github.js talks to api.github.com and raw.githubusercontent.com; local.js makes no
+      requests at all.
+
+  - title: From document to model
+    focus:
+      - web/src/data.js#buildModel
+      - web/src/data.js#layoutCity
+      - web/src/data.js#layoutGraph
+    note: >
+      data.js is pure model code: per-file history across renames, the treemap that sizes
+      towers and districts, and the force layout for the import graph.
+
+  - title: The scene
+    folder: web/src
+    focus:
+      - web/src/main.js#applyState
+      - web/src/main.js#loadSource
+    camera: top
+    note: >
+      main.js loads a map, builds the Three.js scene and renders the HUD from one state object.
+      Change state, then call the renderer; never patch the DOM by hand.

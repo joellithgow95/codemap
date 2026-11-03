@@ -13,6 +13,7 @@ import {
   pool,
   wantsText,
 } from './parse.js'
+import { guideFromComment } from './guide.js'
 
 const API = 'https://api.github.com'
 const RAW = 'https://raw.githubusercontent.com'
@@ -106,6 +107,22 @@ export async function listPulls(spec, token = '') {
   const ctx = { owner: spec.owner, repo: spec.repo, token, remaining: null }
   const pulls = await api(ctx, `/repos/${ctx.owner}/${ctx.repo}/pulls?state=open&sort=updated&per_page=30`)
   return pulls.map((p) => ({ number: p.number, title: p.title, author: p.user?.login ?? 'unknown', draft: p.draft, updated: p.updated_at }))
+}
+
+// A PR's guide, if a comment carries one (see GUIDE_MARKER). This is the ephemeral half of the
+// hybrid: CI or a person posts it, nothing is committed. Anyone who can comment can post one, so
+// the caller shows who wrote it. Newest comment wins. Failure is never fatal.
+export async function fetchPullGuide(ctx, number) {
+  try {
+    const comments = await api(ctx, `/repos/${ctx.owner}/${ctx.repo}/issues/${number}/comments?per_page=100`)
+    for (const c of comments.reverse()) {
+      const text = guideFromComment(c.body)
+      if (text) return { text, author: c.user?.login ?? 'unknown' }
+    }
+  } catch {
+    // No comments readable (rate limit, no access): the PR still loads without a guide.
+  }
+  return null
 }
 
 export async function loadGithub(spec, { token = '', commitLimit = 50, onProgress = () => {} } = {}) {

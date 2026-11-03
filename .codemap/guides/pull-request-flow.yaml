@@ -1,0 +1,34 @@
+version: 1
+title: How a pull request becomes a map
+summary: ?gh=owner/name&pr=123 loads the PR's head tree with the PR's own commits as the timeline.
+steps:
+  - title: Parse the link
+    focus:
+      - web/src/github.js#parseRepoSpec
+      - web/src/main.js#loadSource
+    note: >
+      The spec can be owner/name, owner/name#123, a github.com/pull URL, or ?gh=...&pr=123.
+
+  - title: Load the PR
+    focus:
+      - web/src/github.js#loadGithub
+    view: city
+    lens: change
+    note: >
+      With a pull number, the history is the PR's commits (up to 100) laid over the tree at its
+      head. Fork PRs load through the base repo.
+
+  - title: Read the diff in the city
+    focus:
+      - web/src/data.js#buildModel
+    lens: change
+    commit: latest
+    note: >
+      The CHANGE lens colours what the selected commit touched. Step the timeline to replay the
+      PR one commit at a time.
+
+  - title: Pick a PR
+    focus:
+      - web/src/github.js#listPulls
+    note: >
+      The menu's "Browse open PRs" calls listPulls for the typed repo and opens the one you pick.

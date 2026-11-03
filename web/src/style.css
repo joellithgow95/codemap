@@ -174,3 +174,19 @@ a.chip { text-decoration: none; display: block; }
 .field { width: 100%; margin-top: 6px; background: rgba(0, 240, 255, 0.05); border: 1px solid var(--line); color: var(--ice); font: inherit; padding: 6px 8px; outline: none; }
 .field:focus { border-color: var(--cyan); }
 .note { margin-top: 6px; font-size: 10px; }
+
+#guide { position: fixed; left: 50%; bottom: 88px; transform: translateX(-50%); width: min(540px, calc(100vw - 720px)); min-width: 320px; max-height: 38vh; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--magenta); box-shadow: 0 0 18px rgba(255, 43, 214, 0.18); z-index: 9; transition: left 0.25s; }
+body.panel-open #guide { left: calc((100vw - min(46vw, 760px)) / 2); }
+#guide-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+#guide-title { color: var(--magenta); letter-spacing: 0.08em; }
+#guide-src { font-size: 10px; margin-top: 2px; overflow-wrap: anywhere; }
+#guide-body { padding: 8px 10px; overflow-y: auto; }
+#guide-body p { margin: 6px 0; white-space: pre-wrap; line-height: 1.45; }
+.guide-step { color: var(--cyan); }
+.guide-anchors { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.guide-anchors .chip { text-align: left; overflow-wrap: anywhere; }
+.guide-warn { color: var(--amber); margin-top: 6px; }
+.guide-entry { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; margin-top: 4px; }
+.guide-entry b { color: var(--ice); font-weight: normal; }
+#guide-nav { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-top: 1px solid var(--line); }
+#guide-nav .chip:disabled { opacity: 0.35; cursor: default; }

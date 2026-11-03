@@ -1,0 +1,37 @@
+version: 1
+title: Where untrusted repo text goes
+summary: Paths, file text and commit messages come from arbitrary repos. Follow them to the screen.
+steps:
+  - title: Data enters
+    focus:
+      - web/src/github.js#fetchText
+      - web/src/github.js#loadGithub
+    lens: language
+    note: >
+      Everything here is attacker-controlled when the repo is: file paths, file contents, commit
+      subjects, author names. A GitHub token may be sitting in sessionStorage while it renders.
+
+  - title: Parsing stays inert
+    focus:
+      - web/src/parse.js#extractSymbols
+      - web/src/parse.js#buildResolver
+    note: >
+      Symbols and imports are extracted with regexes and an AST in the scanner. Nothing from a
+      repo is ever evaluated, imported or used as a URL.
+
+  - title: Escaped at the sink
+    focus:
+      - web/src/main.js#esc
+      - web/src/highlight.js#highlightLines
+    note: >
+      Every value that reaches innerHTML goes through esc() (which escapes quotes, for
+      attributes) or the highlighter's own escaping. A new sink that skips both is a bug.
+
+  - title: The CSP backs it up
+    focus:
+      - netlify.toml
+      - web/netlify/functions/github-token.mjs
+    note: >
+      The Content-Security-Policy only lets the page talk to itself, api.github.com and
+      raw.githubusercontent.com, so even a missed escape can't exfiltrate a token. A new host or
+      inline script needs a matching change in netlify.toml.

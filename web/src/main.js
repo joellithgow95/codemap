@@ -13,8 +13,9 @@ import { ViewHelper } from 'three/examples/jsm/helpers/ViewHelper.js'
 import { LANG_COLORS, buildModel, existsAt, layoutCity, layoutGraph, locAt, stateAt } from './data.js'
 import { feedbackUrl } from './feedback.js'
 import { highlightLines } from './highlight.js'
-import { extractSymbols } from './parse.js'
-import { GithubError, fetchText, listPulls, loadGithub, parseRepoSpec } from './github.js'
+import { extractSymbols, parsesSymbols } from './parse.js'
+import { GithubError, fetchPullGuide, fetchText, listPulls, loadGithub, parseRepoSpec } from './github.js'
+import { GUIDE_FILE, commitIndexOf, parseGuide, splitAnchor, validateGuide } from './guide.js'
 import { LocalError, loadLocal, pickFolder } from './local.js'
 
 const $ = (id) => document.getElementById(id)
@@ -213,6 +214,9 @@ const state = {
   orthoAuto: false,
   // Looking straight down orthographically: left-drag pans like a map instead of orbiting.
   mapMode: false,
+  // The running guide ({ entry, i }) and the files its current step spotlights (a Set, or null).
+  guide: null,
+  spotlight: null,
 }
 
 const city = layoutCity(files)
@@ -228,6 +232,7 @@ indexTree(city.tree)
 // How far the rest of the city slides away from the focused folder, and how far it is squashed.
 const GHOST_HEIGHT = 0.3
 const GHOST_OPACITY = 0.15
+const SPOT_DIM = 0.28
 const focusGap = (d) => Math.max(4, Math.min(city.size * 0.15, Math.max(d.w, d.d) * 0.4))
 const inFocus = (path) => !state.focus || path === state.focus || path.startsWith(`${state.focus}/`)
 
@@ -462,10 +467,13 @@ function applyState() {
     file.color = lensColor(file, k)
     const lit = state.lens !== 'change' || st !== 'clean'
     file.lit = lit
-    const ghost = file.focus.ghost ? GHOST_OPACITY : 1
+    // A guide step spotlights some files: those read as lit, everything else fades back.
+    const spotted = !!state.spotlight?.has(file)
+    const spot = state.spotlight && !spotted ? SPOT_DIM : 1
+    const ghost = (file.focus.ghost ? GHOST_OPACITY : 1) * spot
     file.mats.forEach(({ material, kind }) => {
       material.color.copy(file.color)
-      material.userData.base = (kind === 'fill' ? (lit ? 0.16 : 0.05) : lit ? 1 : 0.55) * ghost
+      material.userData.base = (kind === 'fill' ? (lit || spotted ? 0.16 : 0.05) : lit || spotted ? 1 : 0.55) * ghost
     })
     file.slabs.forEach((slab) => {
       const shown = slab.ev.commit <= Math.min(k, count - 1)
@@ -509,8 +517,9 @@ function rebuildLinks() {
     line.material.dispose()
   })
   groups.links.clear()
-  const file = state.selected
-  if (!file?.cur) return
+  const spotlit = state.spotlight ? [...state.spotlight] : []
+  const file = state.selected ?? (spotlit.length === 1 ? spotlit[0] : null)
+  if (!file && spotlit.length < 2) return
   const arc = (a, b, color) => {
     const mid = a.clone().lerp(b, 0.5)
     mid.y += 3 + a.distanceTo(b) * 0.25
@@ -521,6 +530,17 @@ function rebuildLinks() {
     )
     groups.links.add(line)
   }
+  if (!file) {
+    // Several spotlit files: draw how they import one another, which is the flow a step points at.
+    spotlit.forEach((a) =>
+      a.cur?.imports.forEach((p) => {
+        const b = model.byPath.get(p)
+        if (a.exists && b?.exists && state.spotlight.has(b)) arc(currentPosition(a), currentPosition(b), 0x00f0ff)
+      }),
+    )
+    return
+  }
+  if (!file.cur) return
   const from = currentPosition(file)
   file.cur.imports.forEach((p) => {
     const other = model.byPath.get(p)
@@ -687,12 +707,12 @@ function flyToFit(box, dir, opts = {}) {
   flyTo(position, target, { zoom, ...opts })
 }
 
-function viewFrom(name) {
+function viewFrom(name, box = scopeBox()) {
   if (state.fly) setFly(false)
   if (state.orthoAuto && name !== 'top') setOrtho(false)
   const toOrtho = name === 'top' && !camera.isOrthographicCamera
   // Fly in perspective, then flatten once looking straight down: the swap keeps the framing.
-  flyToFit(scopeBox(), PRESETS[name], { onDone: toOrtho ? () => setOrtho(true, { auto: true }) : null })
+  flyToFit(box, PRESETS[name], { onDone: toOrtho ? () => setOrtho(true, { auto: true }) : null })
 }
 
 function frameView() {
@@ -1407,6 +1427,178 @@ $('search-input').addEventListener('input', () => {
   renderSearch()
 })
 
+// ---- Guides -------------------------------------------------------------------------------------
+// Ordered walkthroughs (see guide.js). They come from .codemap/guides/*.yaml in the tree being
+// viewed (durable, committed with the code) and, for a PR, from a marked PR comment (ephemeral,
+// never committed). Guide text is untrusted: it only ever reaches the DOM through esc().
+let guides = []
+const guideUi = { picker: false }
+
+// Anchors resolve against the loaded model. A symbol is only checked when the file's text has been
+// read, since GitHub loads fetch text lazily and an unread file has no symbol list yet.
+const guideLookup = (path) => {
+  const f = model.byPath.get(path)
+  if (!f) return null
+  return { symbols: f.cur?.text != null && parsesSymbols(f.lang) ? f.cur.symbols : null }
+}
+
+async function loadGuides() {
+  const found = []
+  for (const f of files.filter((x) => x.cur && GUIDE_FILE.test(x.path))) {
+    let text = f.cur.text
+    if (text == null && ghCtx) {
+      try {
+        text = await fetchText(ghCtx, { path: f.path, sha: f.cur.sha })
+      } catch {
+        text = null
+      }
+    }
+    if (text) found.push({ id: f.name.replace(/\.ya?ml$/, ''), label: f.path, text })
+  }
+  if (ghCtx && pull) {
+    const posted = await fetchPullGuide(ghCtx, pull.number)
+    if (posted) found.push({ id: 'pr', label: `PR comment by @${posted.author}`, text: posted.text })
+  }
+  const shas = commits.map((c) => c.sha)
+  return found.map((entry) => {
+    const { guide, errors, warnings } = parseGuide(entry.text)
+    const problems = guide ? validateGuide(guide, { lookup: guideLookup, folders: districtByPath, shas }) : []
+    return { ...entry, guide, errors, warnings, problems }
+  })
+}
+
+function renderGuide() {
+  const el = $('guide')
+  const g = state.guide
+  el.hidden = !g && !guideUi.picker
+  $('guide-open').classList.toggle('active', !el.hidden)
+  if (el.hidden) return
+  const body = $('guide-body')
+  if (g) {
+    const { entry, i } = g
+    const steps = entry.guide.steps
+    const step = steps[i]
+    const bad = entry.problems.filter((p) => p.step === i)
+    $('guide-title').textContent = entry.guide.title
+    $('guide-src').textContent = entry.label
+    body.innerHTML = `<div class="guide-step">${i + 1}. ${esc(step.title)}</div>
+      ${step.note ? `<p>${esc(step.note)}</p>` : ''}
+      ${step.focus.length ? `<div class="guide-anchors">${step.focus.map((a) => `<button class="chip" data-path="${esc(splitAnchor(a).path)}">${esc(a)}</button>`).join('')}</div>` : ''}
+      ${bad.length ? `<div class="guide-warn">⚠ ${bad.map((p) => esc(p.message)).join(' · ')}</div>` : ''}`
+    body.querySelectorAll('[data-path]').forEach((b) => {
+      b.onclick = () => {
+        const file = model.byPath.get(b.dataset.path)
+        if (file?.exists) select(file, { focus: true })
+        else toast(`${b.dataset.path} isn't in the map at this commit`)
+      }
+    })
+    $('guide-pos').textContent = `${i + 1} / ${steps.length}`
+    $('guide-prev').disabled = i === 0
+    $('guide-next').textContent = i === steps.length - 1 ? 'DONE' : 'NEXT ▶'
+    $('guide-nav').hidden = false
+    return
+  }
+  $('guide-title').textContent = 'GUIDES'
+  $('guide-src').textContent = ''
+  $('guide-nav').hidden = true
+  body.innerHTML = guides
+    .map((e, n) => {
+      const note = e.errors.length
+        ? `<span class="guide-warn">invalid: ${esc(e.errors[0])}</span>`
+        : `${e.guide.steps.length} steps${e.problems.length ? ` · <span class="guide-warn">⚠ ${e.problems.length} unresolved</span>` : ''}`
+      return `<button class="chip wide guide-entry" data-n="${n}"><b>${esc(e.guide?.title ?? e.id)}</b><span class="dim">${note} · ${esc(e.label)}</span></button>`
+    })
+    .join('')
+  body.querySelectorAll('[data-n]').forEach((b) => {
+    b.onclick = () => {
+      const entry = guides[Number(b.dataset.n)]
+      if (entry.guide) openGuide(entry)
+      else toast(`${entry.label}: ${entry.errors[0]}`)
+    }
+  })
+}
+
+function openGuide(entry, i = 0) {
+  guideUi.picker = false
+  state.guide = { entry, i }
+  showStep(i)
+}
+
+function closeGuide() {
+  guideUi.picker = false
+  state.guide = null
+  state.spotlight = null
+  applyState()
+  renderGuide()
+}
+
+function toggleGuide() {
+  if (!guides.length) return
+  if (state.guide || guideUi.picker) return closeGuide()
+  if (guides.length === 1 && guides[0].guide) return openGuide(guides[0])
+  guideUi.picker = true
+  renderGuide()
+}
+
+function stepGuide(delta) {
+  const g = state.guide
+  if (!g) return
+  const last = g.entry.guide.steps.length - 1
+  if (delta > 0 && g.i === last) return closeGuide()
+  showStep(g.i + delta)
+}
+
+// One step = one scene: it sets view, lens, commit and folder, spotlights its files and flies the
+// camera to them. view, lens and commit carry over to later steps when a step leaves them out;
+// folder and focus do not.
+function showStep(i) {
+  const g = state.guide
+  g.i = Math.max(0, Math.min(g.entry.guide.steps.length - 1, i))
+  const step = g.entry.guide.steps[g.i]
+  if (state.fly) setFly(false)
+  if (state.playing) setPlaying(false)
+  if (step.view && step.view !== state.view) setView(step.view)
+  if (step.lens && step.lens !== state.lens) {
+    state.lens = step.lens
+    buildButtons()
+  }
+  const k = commitIndexOf(step.commit, commits.map((c) => c.sha), count)
+  if (k !== null) {
+    state.k = Math.max(0, Math.min(count, k))
+    $('timeline').value = state.k
+  }
+  state.focus = step.folder && districtByPath.has(step.folder) ? step.folder : ''
+  if (state.selected) select(null)
+  const spot = step.focus.map((a) => model.byPath.get(splitAnchor(a).path)).filter(Boolean)
+  state.spotlight = spot.length ? new Set(spot) : null
+  applyState()
+  renderGuide()
+
+  let box = scopeBox()
+  const boxes = spot.filter((f) => f.exists).map(fileBox)
+  if (boxes.length) {
+    box = new THREE.Box3()
+    boxes.forEach((b) => box.union(b))
+  }
+  if (step.camera) viewFrom(step.camera, box)
+  else flyToFit(box, viewDir())
+}
+
+async function initGuides() {
+  guides = await loadGuides()
+  $('guide-open').hidden = !guides.length
+  const want = params.get('guide')
+  if (!want) return
+  const entry = guides.find((e) => e.id === want)
+  if (entry?.guide) openGuide(entry, Math.max(0, Number(params.get('step') ?? 1) - 1 || 0))
+  else toast(entry ? `${entry.label}: ${entry.errors[0]}` : `no guide "${want}" in this tree`)
+}
+
+$('guide-open').onclick = toggleGuide
+$('guide-close').onclick = closeGuide
+$('guide-prev').onclick = () => stepGuide(-1)
+$('guide-next').onclick = () => stepGuide(1)
+
 window.addEventListener('keydown', (e) => {
   const key = e.key.toLowerCase()
   if (search.open) {
@@ -1426,6 +1618,7 @@ window.addEventListener('keydown', (e) => {
   if (key === 'escape') {
     if (!$('menu').hidden) toggleMenu(false)
     else if (state.selected) select(null)
+    else if (state.guide || guideUi.picker) closeGuide()
     else if (state.focus) focusUp()
     else toggleMenu(true)
     return
@@ -1437,6 +1630,9 @@ window.addEventListener('keydown', (e) => {
     openSearch(true)
   } else if (key === '?') toggleKeys(true)
   else if (key === 'f') setFly(!state.fly)
+  else if (key === 'g') toggleGuide()
+  else if (key === '[') stepGuide(-1)
+  else if (key === ']') stepGuide(1)
   else if (key === '1') setView('city')
   else if (key === '2') setView('graph')
   else if (key === '3') setView('strata')
@@ -1629,3 +1825,4 @@ setView('city')
 $('timeline').value = state.k
 requestAnimationFrame(frame)
 
+initGuides()

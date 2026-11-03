@@ -22,6 +22,7 @@
     <div id="lens-buttons"></div>
     <div class="group-label">MODE</div>
     <button id="fly-toggle" class="chip">FLY <kbd>F</kbd></button>
+    <button id="guide-open" class="chip" hidden title="walkthroughs of this codebase">GUIDE <kbd>G</kbd></button>
     <button id="menu-open" class="chip">MENU <kbd>Esc</kbd></button>
     <button id="keys-open" class="chip">KEYS <kbd>?</kbd></button>
     <a class="chip feedback" target="_blank" rel="noopener noreferrer" title="open a prefilled GitHub issue in a new tab">FEEDBACK</a>
@@ -66,6 +67,19 @@
     <div id="loading-text">loading</div>
     <div id="loading-track"><div id="loading-bar"></div></div>
   </div>
+
+  <aside id="guide" hidden>
+    <div id="guide-head">
+      <div><div id="guide-title"></div><div id="guide-src" class="dim"></div></div>
+      <button id="guide-close" class="chip" title="close the guide">✕</button>
+    </div>
+    <div id="guide-body"></div>
+    <div id="guide-nav">
+      <button id="guide-prev" class="chip">◀ PREV</button>
+      <span id="guide-pos" class="dim"></span>
+      <button id="guide-next" class="chip">NEXT ▶</button>
+    </div>
+  </aside>
 
   <div id="tooltip" hidden></div>
   <div id="toast" hidden></div>
@@ -172,6 +186,8 @@
           <table class="keys">
             <tr><td><kbd>Backspace</kbd></td><td>up one folder (also <kbd>Esc</kbd>)</td></tr>
             <tr><td><kbd>/</kbd></td><td>search files</td></tr>
+            <tr><td><kbd>G</kbd></td><td>guides</td></tr>
+            <tr><td><kbd>[</kbd> <kbd>]</kbd></td><td>previous / next guide step</td></tr>
           </table>
           <h2>View</h2>
           <table class="keys">

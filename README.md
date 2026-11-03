@@ -83,6 +83,21 @@ Tokens are kept in the tab's `sessionStorage` and sent only to `api.github.com`.
 Content-Security-Policy only lets the page talk to itself, the GitHub API and the raw-content
 host.
 
+### Guides
+
+A guide is a walkthrough of a codebase: ordered steps that fly the camera to files, set the view,
+lens and commit, and explain what you're looking at. They are YAML files in the mapped repo's
+`.codemap/guides/`, so anyone (or any agent) can write one and commit it. When a repo has guides, a
+**GUIDE** button appears; `[` and `]` step through, or open `?guide=<name>&step=2`. This repo's own
+are in [`.codemap/guides/`](.codemap/guides/): try `?gh=joellithgow95/codemap&guide=architecture-tour`.
+
+For a PR, post a comment containing `<!-- codemap-guide -->` and a fenced `yaml` block and it opens as
+`?guide=pr`, with the commenter's name shown. Nothing is committed. The format is in
+[`web/src/AGENTS.md`](web/src/AGENTS.md#guides). `node web/scripts/check-guides.mjs .` checks that
+every file, symbol and folder a guide names exists; CI runs it. Guide text is shown as plain text.
+
+When a same-repo PR is opened, `pr-map-link.yml` comments a link to its map.
+
 ### Open a local folder
 
 Menu → Open a local folder, or open `?local&n=50`, then CHOOSE FOLDER. This works the same on the

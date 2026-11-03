@@ -11,6 +11,7 @@
 | `git.js` | Read-only `.git` reader for `local.js`: HEAD and refs, loose objects, packfiles and delta chains, inflated with the native `DecompressionStream` |
 | `parse.js` | Language detection, symbol and import extraction, and the file-size limits shared by the browser loaders (the scanner has its own in Python) |
 | `highlight.js` | Regex syntax highlighter for the code panel; escapes everything it emits |
+| `guide.js` | Pure (no DOM, no network): parses and validates guide YAML, resolves `path#symbol` anchors, maps a step's `commit` to a timeline index. Shared by the app and `scripts/check-guides.mjs` |
 | `feedback.js` | Builds the FEEDBACK link: a prefilled new-issue URL on GitHub (`FEEDBACK_REPO` is the one place the tracker is named). No network access: the app only builds a link |
 | `style.css` | HUD styling (Tron palette in `:root` variables) |
 
@@ -30,6 +31,31 @@ Produced by `scan/scan.py` (local), `github.js` (`source: 'github'`) and `local.
 `text` is `null` when not embedded (binary, oversized, or not fetched yet). GitHub loads fetch it
 lazily on open. `blame[i]` is a commit index (empty for both browser loaders). `status` is the
 working-tree state (`clean` for GitHub loads; `clean`, `modified` or `untracked` for local ones).
+
+## Guides
+
+A guide is `.codemap/guides/<name>.yaml` in the repo being mapped (durable, committed) or a PR
+comment holding the `<!-- codemap-guide -->` marker and a fenced yaml block (ephemeral, newest
+wins, author shown). `main.js` loads them after the map (`initGuides`), shows the GUIDE button
+when there are any, and runs a step with `showStep`: view, lens and commit carry over when a step
+omits them; `folder` and `focus` do not. `?guide=<name>&step=N` opens one (`pr` for the comment).
+
+```yaml
+version: 1
+title: How auth works
+steps:
+  - title: Entry point
+    note: Plain text only.
+    focus: [src/api/chat.ts, src/auth.ts#verifyToken]   # path or path#symbol
+    folder: src/api        # optional: focus this folder
+    view: city             # city | graph | strata
+    lens: change           # change | language | churn | age
+    camera: iso            # iso | top | front | side
+    commit: latest         # latest | first | working | sha prefix
+```
+
+`overlays` is reserved for later and ignored. Anchors use symbols from `parse.js`, so they are
+only checked where the file's text is loaded; CI checks them all.
 
 ## main.js layout
 

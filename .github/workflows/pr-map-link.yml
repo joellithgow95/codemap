@@ -1,0 +1,35 @@
+name: PR map link
+
+# Posts (once) a comment linking the PR to its CodeMap view. Nothing is built or uploaded: the
+# viewer loads the PR straight from the GitHub API, so the link is all there is to publish.
+on:
+  pull_request:
+    types: [opened, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  link:
+    # A fork's token is read-only and can't comment, so only same-repo PRs get a link.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post or update the link
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          # Set the repo variable CODEMAP_URL if you deploy your own copy of the viewer.
+          VIEWER: ${{ vars.CODEMAP_URL || 'https://codemap-3d.netlify.app' }}
+        run: |
+          marker='<!-- codemap-link -->'
+          body="$marker
+          **CodeMap:** see what this PR changes as a city: ${VIEWER}/?gh=${REPO}&pr=${PR}"
+          existing=$(gh api "repos/${REPO}/issues/${PR}/comments" --paginate \
+            --jq ".[] | select(.body | contains(\"${marker}\")) | .id" | head -n1)
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "repos/${REPO}/issues/comments/${existing}" -f body="$body" >/dev/null
+          else
+            gh api "repos/${REPO}/issues/${PR}/comments" -f body="$body" >/dev/null
+          fi

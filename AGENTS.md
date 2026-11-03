@@ -20,8 +20,9 @@ picked folder ─ web/src/local.js ───┘   (reads the folder's .git in th
 | `web/` | The app: Vite config, dev-server endpoints, npm scripts, demo maps | [`web/AGENTS.md`](web/AGENTS.md) |
 | `web/src/` | App source: scene, HUD, GitHub and local-folder loaders, git reader, parsers, highlighter | [`web/src/AGENTS.md`](web/src/AGENTS.md) |
 | `web/netlify/functions/` | The one server-side piece: GitHub OAuth code → token exchange | [`web/netlify/functions/AGENTS.md`](web/netlify/functions/AGENTS.md) |
+| `.codemap/guides/` | Guides: YAML walkthroughs of this repo, loaded by the app when it maps the repo. Validated in CI | [`web/src/guide.js`](web/src/guide.js) |
 | `.github/ISSUE_TEMPLATE/` | Issue form for feedback filed directly (same sections as the in-app button) and the security contact link | |
-| `.github/workflows/` | `ci.yml` builds and checks; `labels.yml` creates the issue labels the feedback link applies; `deploy.yml` redeploys to Netlify (secrets `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`) | |
+| `.github/workflows/` | `ci.yml` builds and checks; `labels.yml` creates the issue labels the feedback link applies; `pr-map-link.yml` comments a viewer link on same-repo PRs; `deploy.yml` redeploys to Netlify (secrets `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`) | |
 | `netlify.toml` | Build, publish dir, functions dir, security headers and CSP | this file |
 | `docs/` | README screenshots (taken from public demo maps only) | |
 | `THIRD_PARTY_NOTICES.md` | Licenses of the bundled demo maps | |
@@ -38,8 +39,12 @@ npm run scan -- <repo path>      # scan a local checkout into web/local-maps/
 GITHUB_TOKEN=... npm run demo -- owner/name 60   # public repos only, writes web/public/demo/
 ```
 
-There is no test suite. CI (`.github/workflows/ci.yml`) builds the app and byte-compiles the
-scanner. Check behaviour by running the app.
+```sh
+node web/scripts/check-guides.mjs .   # from the repo root: validate .codemap/guides/*.yaml
+```
+
+There is no test suite. CI (`.github/workflows/ci.yml`) builds the app, byte-compiles the scanner
+and checks the guides. Check behaviour by running the app.
 
 ## Hard rules
 
@@ -64,9 +69,14 @@ scanner. Check behaviour by running the app.
   never persisted beyond `sessionStorage`.
 - **Demo maps are third-party content.** Only public repos whose license allows redistribution,
   each with a row in `THIRD_PARTY_NOTICES.md`.
+- **Guides are untrusted data too.** A guide comes from a repo or a PR comment, so `guide.js`
+  parses it with tight limits (size, steps, no YAML aliases, core schema) and a fixed vocabulary,
+  and every guide string goes through `esc()` as plain text, never markdown or HTML. Guide files
+  and the CI check never execute anything from a guide. A guide's anchors can be wrong, so a step
+  with an unresolved anchor still runs and shows a warning.
 - **No new dependencies without a license check.** Permissive licenses only (MIT, Apache-2.0, BSD,
-  ISC). The app has two runtime dependencies on purpose: three, and diff (jsdiff, BSD-3-Clause)
-  for the local loader's line diffs.
+  ISC). The app has three runtime dependencies on purpose: three, diff (jsdiff, BSD-3-Clause) for
+  the local loader's line diffs, and yaml (ISC) for guides.
 
 ## Conventions
 

@@ -166,10 +166,14 @@ async function loadSource() {
   return { doc, ctx: null, name: entry.name, manifest, publicName: entry.base === '/demo/' ? entry.label ?? entry.name : null }
 }
 
+const DEFAULT_DEMO = 'joellithgow95-codemap'
+
 async function loadManifests() {
   const [local, demo] = await Promise.all([readManifest('/maps/manifest.json', '/maps/'), readManifest('/demo/manifest.json', '/demo/')])
   const names = new Set(local.map((m) => m.name))
-  return [...local, ...demo.filter((m) => !names.has(m.name)).sort((a, b) => b.commits - a.commits)]
+  // The bundled default demo leads (it is what loads with no ?repo=); the rest follow by commit count.
+  const rank = (m) => (m.name === DEFAULT_DEMO ? 1 : 0)
+  return [...local, ...demo.filter((m) => !names.has(m.name)).sort((a, b) => rank(b) - rank(a) || b.commits - a.commits)]
 }
 
 await completeOAuth()

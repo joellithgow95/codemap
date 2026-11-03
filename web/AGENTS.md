@@ -10,7 +10,7 @@ The browser app, its build, and its dev-only server endpoints.
 | `src/` | App source. See [`src/AGENTS.md`](src/AGENTS.md) |
 | `netlify/functions/` | OAuth token exchange. See [`netlify/functions/AGENTS.md`](netlify/functions/AGENTS.md) |
 | `scripts/make-demo.mjs` | `npm run demo`: loads a public GitHub repo with `src/github.js` and writes a demo map |
-| `public/demo/` | Demo maps that ship with the site, plus their `manifest.json`. Third-party content: see `THIRD_PARTY_NOTICES.md` |
+| `public/demo/` | Demo maps that ship with the site, plus their `manifest.json`; the default (`DEFAULT_DEMO` in `src/main.js`) is CodeMap itself. Third-party content: see `THIRD_PARTY_NOTICES.md` |
 | `local-maps/` | **Git-ignored.** Local scans (full source). Served at `/maps/` by the dev server only |
 | `.env.example` | OAuth variables for local sign-in; copy to `.env.local` (git-ignored) |
 | `vite.config.js` | Dev server on 127.0.0.1:5179, the dev-only middleware below, and `__APP_VERSION__` (from `package.json`) defined for the feedback link |

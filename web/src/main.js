@@ -660,14 +660,16 @@ function fitView(box, dir, margin = 1.12) {
   halfW = Math.max(halfW * margin, 1)
   halfH = Math.max(halfH * margin, 1)
   // Fit into the part of the screen the code panel doesn't cover.
-  const aspect = (innerWidth - panelWidth()) / innerHeight
+  const cov = covered()
+  const aspect = (innerWidth - cov.right) / innerHeight
+  const tall = (innerHeight - cov.top - cov.bottom) / innerHeight // share of the height left free (phone sheets)
   if (camera.isOrthographicCamera) {
     // Distance only has to clear the tallest thing in the box; zoom sets the size.
-    const zoom = Math.min((ORTHO_HALF * aspect) / halfW, ORTHO_HALF / halfH)
+    const zoom = Math.min((ORTHO_HALF * aspect) / halfW, (ORTHO_HALF * tall) / halfH)
     return { position: center.clone().addScaledVector(dir, Math.max(city.size * 0.8, depth + 10)), target: center, zoom }
   }
   const tan = Math.tan(THREE.MathUtils.degToRad(perspCamera.fov / 2))
-  const dist = depth + Math.max(halfH / tan, halfW / (tan * aspect))
+  const dist = depth + Math.max(halfH / (tan * tall), halfW / (tan * aspect))
   return { position: center.clone().addScaledVector(dir, dist), target: center, zoom: 1 }
 }
 
@@ -1486,6 +1488,7 @@ function renderGuide() {
   el.hidden = !g && !guideUi.picker
   $('guide-open').classList.toggle('active', !el.hidden)
   $('dock-guide').classList.toggle('active', !el.hidden)
+  document.body.classList.toggle('guide-on', !el.hidden)
   if (el.hidden) return
   const body = $('guide-body')
   if (g) {
@@ -1494,7 +1497,9 @@ function renderGuide() {
     const step = steps[i]
     const bad = entry.problems.filter((p) => p.step === i)
     $('guide-title').textContent = entry.guide.title
-    $('guide-src').textContent = entry.label
+    // The phone layout hides the timeline while a guide is open, so say which commit the step shows.
+    const at = state.k >= count ? 'worktree' : `${commits[state.k].short} ${commits[state.k].subject}`
+    $('guide-src').textContent = `${entry.label} · at ${at}`
     body.innerHTML = `<div class="guide-step">${i + 1}. ${esc(step.title)}</div>
       ${step.note ? `<p>${esc(step.note)}</p>` : ''}
       ${step.focus.length ? `<div class="guide-anchors">${step.focus.map((a) => `<button class="chip" data-path="${esc(splitAnchor(a).path)}">${esc(a)}</button>`).join('')}</div>` : ''}
@@ -1615,6 +1620,10 @@ $('dock-guide').onclick = () => {
   toggleGuide()
 }
 $('guide-close').onclick = closeGuide
+$('guide-fold').onclick = () => {
+  const folded = document.body.classList.toggle('guide-folded')
+  $('guide-fold').textContent = folded ? '▴' : '▾'
+}
 $('guide-prev').onclick = () => stepGuide(-1)
 $('guide-next').onclick = () => stepGuide(1)
 
@@ -1691,15 +1700,24 @@ function resize() {
   applyViewShift()
 }
 
-// Width the open code panel covers (matches #panel's min(46vw, 760px)).
-const panelWidth = () => (state.selected ? Math.min(innerWidth * 0.46, 760) : 0)
+// What the HUD covers, in px per edge. Desktop: the code panel's width on the right (matches
+// #panel's min(46vw, 760px)). Phone: the dock on top and, at the bottom, whichever sheet is up
+// (file panel, guide, or just the timeline).
+const phoneMq = matchMedia('(max-width: 720px)')
+function covered() {
+  if (!phoneMq.matches) return { right: state.selected ? Math.min(innerWidth * 0.46, 760) : 0, top: 0, bottom: 0 }
+  const sheet = state.selected ? $('panel') : !$('guide').hidden ? $('guide') : $('hud-timeline')
+  const bottom = state.selected ? $('panel').offsetHeight : innerHeight - sheet.getBoundingClientRect().top
+  return { right: 0, top: $('hud-dock').getBoundingClientRect().bottom, bottom }
+}
 
-// Slides the projection centre left by half the panel width, so whatever the camera looks at sits
+// Slides the projection centre by half of what's covered, so whatever the camera looks at sits
 // in the middle of the uncovered area. Eased in frame() to follow the panel's slide.
 let viewShift = 0
+let viewShiftY = 0
 function applyViewShift() {
   for (const cam of [perspCamera, orthoCamera]) {
-    if (viewShift > 0.5) cam.setViewOffset(innerWidth, innerHeight, viewShift, 0, innerWidth, innerHeight)
+    if (Math.abs(viewShift) > 0.5 || Math.abs(viewShiftY) > 0.5) cam.setViewOffset(innerWidth, innerHeight, viewShift, viewShiftY, innerWidth, innerHeight)
     else cam.clearViewOffset()
     cam.updateProjectionMatrix()
   }
@@ -1731,12 +1749,16 @@ function frame() {
 
   const pulse = 0.7 + 0.3 * Math.sin(time * 4)
   const ease = Math.min(1, dt * 6)
-  const shiftGoal = panelWidth() / 2
-  if (Math.abs(shiftGoal - viewShift) > 0.5) {
+  const cov = covered()
+  const shiftGoal = cov.right / 2
+  const shiftGoalY = (cov.bottom - cov.top) / 2
+  if (Math.abs(shiftGoal - viewShift) > 0.5 || Math.abs(shiftGoalY - viewShiftY) > 0.5) {
     viewShift += (shiftGoal - viewShift) * Math.min(1, dt * 12)
+    viewShiftY += (shiftGoalY - viewShiftY) * Math.min(1, dt * 12)
     applyViewShift()
-  } else if (viewShift !== shiftGoal) {
+  } else if (viewShift !== shiftGoal || viewShiftY !== shiftGoalY) {
     viewShift = shiftGoal
+    viewShiftY = shiftGoalY
     applyViewShift()
   }
   let graphMoved = false

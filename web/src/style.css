@@ -197,6 +197,7 @@ body.panel-open #guide { left: calc((100vw - min(46vw, 760px)) / 2); }
    popovers (one at a time), the guide and the file panel are bottom sheets, and the hover tooltip
    is dropped because a tap selects. Nothing below applies above 720px. */
 #hud-dock { display: none; }
+#guide-fold { display: none; }
 @media (max-width: 720px) {
   :root { --safe-b: env(safe-area-inset-bottom, 0px); }
   html, body { font-size: 13px; }
@@ -246,7 +247,17 @@ body.panel-open #guide { left: calc((100vw - min(46vw, 760px)) / 2); }
   #commit-info { width: 34%; font-size: 11px; }
 
   /* The guide is a bottom sheet just above the timeline; the map keeps the rest. */
-  #guide { left: 8px; right: 8px; bottom: calc(68px + var(--safe-b)); transform: none; width: auto; min-width: 0; max-height: 34vh; transition: none; }
+  #guide { left: 8px; right: 8px; bottom: calc(68px + var(--safe-b)); transform: none; width: auto; min-width: 0; max-height: 32vh; transition: none; }
+  /* The guide sits where the timeline was: each step pins its own commit (shown in the guide's
+     header), so a second scrubber would only fight it. */
+  body.guide-on #hud-timeline { display: none; }
+  body.guide-on #guide { bottom: calc(8px + var(--safe-b)); }
+  body.guide-on #toast { bottom: calc(40vh + var(--safe-b)); }
+  #guide-fold { display: inline-flex; min-width: 40px; }
+  #guide-head > div:first-child { flex: 1; min-width: 0; }
+  #guide-head { gap: 6px; }
+  #guide-src { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body.guide-folded #guide-body { display: none; }
   body.panel-open #guide { display: none; } /* the file sheet takes the bottom; closing it brings the guide back */
   #guide-head { padding: 4px 6px 4px 10px; align-items: center; }
   #guide-title { font-size: 12px; }

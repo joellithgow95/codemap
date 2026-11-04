@@ -15,6 +15,15 @@
     <div id="repo-meta" class="dim"></div>
   </header>
 
+  <!-- Phones only (CSS hides it elsewhere): one row of toggles, one popover open at a time. -->
+  <nav id="hud-dock" aria-label="panels">
+    <button class="chip" data-pop="views">VIEW</button>
+    <button class="chip" data-pop="tree">FILES</button>
+    <button class="chip" data-pop="camera">CAM</button>
+    <button class="chip" data-pop="legend">KEY</button>
+    <button class="chip" id="dock-guide" hidden>GUIDE</button>
+  </nav>
+
   <nav id="hud-views">
     <div class="group-label">VIEW</div>
     <div id="view-buttons"></div>
@@ -71,6 +80,7 @@
   <aside id="guide" hidden>
     <div id="guide-head">
       <div><div id="guide-title"></div><div id="guide-src" class="dim"></div></div>
+      <button id="guide-fold" class="chip" title="fold the guide to its buttons">▾</button>
       <button id="guide-close" class="chip" title="close the guide">✕</button>
     </div>
     <div id="guide-body"></div>

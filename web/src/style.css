@@ -190,3 +190,100 @@ body.panel-open #guide { left: calc((100vw - min(46vw, 760px)) / 2); }
 .guide-entry b { color: var(--ice); font-weight: normal; }
 #guide-nav { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-top: 1px solid var(--line); }
 #guide-nav .chip:disabled { opacity: 0.35; cursor: default; }
+
+/* ---- Phones (portrait) ------------------------------------------------------------------
+   Desktop lays every panel out at once; on a narrow screen that covers the map. Here the title,
+   a dock of toggles and the timeline are always visible, the view/files/camera/legend panels are
+   popovers (one at a time), the guide and the file panel are bottom sheets, and the hover tooltip
+   is dropped because a tap selects. Nothing below applies above 720px. */
+#hud-dock { display: none; }
+#guide-fold { display: none; }
+@media (max-width: 720px) {
+  :root { --safe-b: env(safe-area-inset-bottom, 0px); }
+  html, body { font-size: 13px; }
+  .chip, #panel-tabs button { min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+  .chip kbd, #hud-dock kbd { display: none; } /* no keyboard on a phone */
+  .chip.wide { margin-top: 8px; }
+  .field, #search-input { font-size: 16px; min-height: 40px; } /* 16px stops iOS zooming on focus */
+
+  #hud-title { top: 10px; left: 12px; right: 12px; }
+  .brand { font-size: 15px; }
+  #repo-meta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; }
+
+  #hud-dock { display: flex; gap: 6px; position: fixed; top: 54px; left: 8px; right: 8px; z-index: 12; }
+  #hud-dock .chip { flex: 1; padding: 4px 2px; font-size: 11px; background: var(--panel); }
+  #hud-dock .chip.active { background: var(--cyan); }
+  #hud-dock #dock-guide { color: var(--magenta); border-color: var(--magenta); }
+  #hud-dock #dock-guide.active { background: var(--magenta); color: #130010; box-shadow: 0 0 12px var(--magenta); }
+  #hud-dock [hidden] { display: none; }
+
+  /* Popovers: hidden until the dock opens one. */
+  #hud-views, #hud-tree, #hud-camera, #hud-legend { display: none; position: fixed; top: 104px; left: 8px; right: 8px; bottom: auto; width: auto; max-height: 48vh; z-index: 11; background: var(--panel); border: 1px solid var(--line); padding: 8px; overflow: auto; }
+  body[data-pop="views"] #hud-views { display: flex; flex-direction: column; }
+  body[data-pop="tree"] #hud-tree { display: flex; }
+  body[data-pop="camera"] #hud-camera { display: flex; flex-direction: column; align-items: stretch; pointer-events: auto; }
+  body[data-pop="legend"] #hud-legend { display: block; }
+  body.panel-open #hud-views, body.panel-open #hud-camera, body.panel-open #hud-timeline { right: 8px; }
+  #hud-views { gap: 6px; }
+  #view-buttons, #lens-buttons { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+  #view-buttons .chip, #lens-buttons .chip { flex: 1 1 28%; }
+  #hud-views .chip { text-align: center; }
+  #hud-views .chip.wide, #hud-views #guide-open { width: 100%; }
+  #guide-open { display: none; } /* the dock has GUIDE */
+  #hud-views a.feedback { font-size: 11px; justify-content: center; }
+  .group-label { margin-top: 6px; }
+  #tree-filter { min-height: 32px; font-size: 11px; padding: 2px 10px; }
+  .tree-row { padding-top: 6px; padding-bottom: 6px; }
+  #hud-camera { gap: 0; }
+  #camera-buttons { grid-template-columns: repeat(3, 1fr); background: none; border: 0; padding: 0; gap: 6px; }
+  #camera-buttons .chip { font-size: 11px; justify-content: center; text-align: center; }
+  #camera-buttons #cam-reset { grid-column: span 3; }
+  #cam-hint, #gizmo { display: none; } /* right-drag and axis taps are mouse features */
+  #hud-legend div { padding: 2px 0; }
+
+  #hud-timeline { left: 8px; right: 8px; bottom: calc(8px + var(--safe-b)); height: 52px; gap: 8px; padding: 4px 8px; }
+  #play { min-width: 44px; }
+  #timeline { height: 32px; }
+  #commit-info { width: 34%; font-size: 11px; }
+
+  /* The guide is a bottom sheet just above the timeline; the map keeps the rest. */
+  #guide { left: 8px; right: 8px; bottom: calc(68px + var(--safe-b)); transform: none; width: auto; min-width: 0; max-height: 32vh; transition: none; }
+  /* The guide sits where the timeline was: each step pins its own commit (shown in the guide's
+     header), so a second scrubber would only fight it. */
+  body.guide-on #hud-timeline { display: none; }
+  body.guide-on #guide { bottom: calc(8px + var(--safe-b)); }
+  body.guide-on #toast { bottom: calc(40vh + var(--safe-b)); }
+  #guide-fold { display: inline-flex; min-width: 40px; }
+  #guide-head > div:first-child { flex: 1; min-width: 0; }
+  #guide-head { gap: 6px; }
+  #guide-src { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body.guide-folded #guide-body { display: none; }
+  body.panel-open #guide { display: none; } /* the file sheet takes the bottom; closing it brings the guide back */
+  #guide-head { padding: 4px 6px 4px 10px; align-items: center; }
+  #guide-title { font-size: 12px; }
+  #guide-close { min-width: 40px; }
+  #guide-body { padding: 6px 10px; }
+  .guide-anchors .chip { min-height: 36px; justify-content: flex-start; font-size: 11px; }
+  #guide-nav { padding: 4px 8px; }
+  #guide-nav .chip { min-width: 84px; }
+
+  /* The file panel: a bottom sheet instead of a right-hand column. */
+  #panel { top: auto; left: 0; right: 0; bottom: 0; width: auto; height: 62vh; border-left: 0; border-top: 1px solid var(--cyan); box-shadow: 0 -10px 40px rgba(0, 240, 255, 0.12); padding-bottom: var(--safe-b); }
+  #panel.closed { transform: translateY(105%); }
+  #panel-path { font-size: 12px; }
+  .code { font-size: 11px; }
+  .list-row { padding: 10px 12px; }
+
+  /* A tap selects and opens the panel, so the hover card would only cover the map. */
+  #tooltip { display: none !important; }
+  #toast { top: auto; bottom: calc(132px + var(--safe-b)); max-width: 90vw; text-align: center; }
+  #crosshair { display: none; }
+
+  .overlay { padding: 8px; }
+  .menu-card { width: 100%; padding: 14px; }
+  .menu-foot { flex-wrap: wrap; }
+  .menu-foot #menu-resume { flex: 1 1 100%; order: -1; margin-top: 0; }
+  .menu-foot .chip { flex: 1; }
+  .keys-card { width: 100%; }
+  #search { top: 10%; width: calc(100vw - 16px); }
+}

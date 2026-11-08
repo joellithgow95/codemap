@@ -86,6 +86,7 @@ body.panel-open #hud-timeline { right: calc(min(46vw, 760px) + 16px); }
 .label { color: var(--cyan); font-size: 10px; letter-spacing: 0.12em; text-shadow: 0 0 6px #000, 0 0 6px #000; white-space: nowrap; opacity: 0.85; }
 .label.dir { color: var(--magenta); font-size: 11px; pointer-events: auto; cursor: pointer; }
 .label.dir:hover, .label.dir.hot { color: #fff; text-shadow: 0 0 8px var(--magenta); }
+.label.spot, #up-button { display: none; } /* phone-only, see the 720px block */
 .label.sel { color: #fff; font-size: 12px; opacity: 1; text-shadow: 0 0 8px var(--cyan); }
 
 #panel { position: fixed; top: 0; right: 0; bottom: 0; width: min(46vw, 760px); background: var(--panel); border-left: 1px solid var(--cyan); box-shadow: -10px 0 40px rgba(0, 240, 255, 0.12); display: flex; flex-direction: column; transition: transform 0.25s; z-index: 10; backdrop-filter: blur(6px); }
@@ -278,6 +279,14 @@ body.panel-open #guide { left: calc((100vw - min(46vw, 760px)) / 2); }
   #tooltip { display: none !important; }
   #toast { top: auto; bottom: calc(132px + var(--safe-b)); max-width: 90vw; text-align: center; }
   #crosshair { display: none; }
+
+  /* Zoom out of a focused folder; sits above the timeline, out of the dock's and guide's way. */
+  #up-button { position: fixed; left: 8px; bottom: calc(68px + var(--safe-b)); z-index: 12; background: var(--panel); max-width: 60vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #up-button:not([hidden]) { display: inline-flex; }
+  body.guide-on #up-button { bottom: calc(40vh + 8px + var(--safe-b)); }
+  body.panel-open #up-button { display: none; }
+  /* Diagram-style tag on each block a guide step lights. */
+  .label.spot { display: block; color: #fff; background: var(--panel); border: 1px solid var(--magenta); padding: 1px 5px; font-size: 10px; letter-spacing: 0.04em; transform: translateY(-6px); box-shadow: 0 0 8px rgba(255, 43, 214, 0.5); }
 
   .overlay { padding: 8px; }
   .menu-card { width: 100%; padding: 14px; }

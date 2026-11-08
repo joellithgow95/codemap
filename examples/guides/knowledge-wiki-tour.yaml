@@ -1,0 +1,95 @@
+version: 1
+title: How the knowledge-wiki quickstart works
+summary: Reads a deal's SEC filings once into a markdown wiki in a Managed Agents memory store, then answers questions from the wiki alone.
+steps:
+  - title: The idea
+    focus:
+      - managed-agents/knowledge-wiki/README.md
+    folder: managed-agents/knowledge-wiki
+    note: >
+      Instead of re-searching raw documents for every question, build a wiki once. Provenance stays on
+      every fact, conflicts between documents stay conflicts, and superseded figures stay superseded.
+      The worked example is the 2024 Squarespace take-private, from public SEC filings.
+
+  - title: The notebook is the product
+    focus:
+      - managed-agents/knowledge-wiki/distill_documents_into_knowledge_wiki.ipynb
+    note: >
+      Everything runs top to bottom in one notebook, with real recorded output in every cell. Part 1
+      builds the wiki, part 2 asks it questions, then it reports what each cost. Everything else in the
+      folder exists to set the notebook up.
+
+  - title: Choose and fetch the corpus
+    focus:
+      - managed-agents/knowledge-wiki/build_manifest.py
+      - managed-agents/knowledge-wiki/manifest_core.json
+      - managed-agents/knowledge-wiki/fetch_data_room.py
+    note: >
+      Five size-tiered manifests (quickstart, mini, core, standard, full) list SEC filings. core is a
+      fixed list of 8 filings and is the recorded run. fetch_data_room.py downloads a tier and writes
+      provenance-stamped text files. build_manifest.py only refreshes the other manifests from EDGAR.
+
+  - title: Synthetic companions and your own files
+    focus:
+      - managed-agents/knowledge-wiki/example_data/analyst_note_synthetic.md
+      - managed-agents/knowledge-wiki/example_data/data_provider_extract.csv
+      - managed-agents/knowledge-wiki/make_analyst_docx.py
+    note: >
+      Two marked-synthetic files stand in for internal documents. The analyst note gives an EBITDA
+      estimate on a different basis than the reported figure, so you can watch the wiki keep both.
+      To use your own corpus, point COOKBOOK_DOCS at a folder of text files.
+
+  - title: Agents and the schema
+    focus:
+      - managed-agents/knowledge-wiki/prompts/analyzer_system.md
+      - managed-agents/knowledge-wiki/prompts/organizer_system.md
+    note: >
+      The consolidation method lives in prompts. Analyzers check what was filed against the source
+      documents. The organizer merges duplicates, keeps conflicting claims side by side, and maintains
+      _index.md and SKILL.md. Each ends in an instructions block the notebook fills with the wiki schema.
+
+  - title: One lead agent, one dynamic workflow
+    focus:
+      - managed-agents/knowledge-wiki/prompts/lead_system.md
+    note: >
+      The build is a single Managed Agents session. A lead agent writes and starts one workflow run:
+      extractors per batch of documents, a resolver for the top flagged gaps, analyzers, then the
+      organizer. It never reads documents itself and returns a JSON summary of what ran.
+
+  - title: Plumbing in utilities.py
+    focus:
+      - managed-agents/knowledge-wiki/utilities.py#upload_file
+      - managed-agents/knowledge-wiki/utilities.py#follow
+      - managed-agents/knowledge-wiki/utilities.py#stop_runs
+      - managed-agents/knowledge-wiki/utilities.py#copy_store
+    note: >
+      Uploads documents into the session, follows the event stream until the workflow finishes, can
+      stop runs, and copies or exports the memory store. Run records go to a private folder under the
+      system temp directory unless COOKBOOK_RECORDS_DIR is set.
+
+  - title: Check what actually ran
+    focus:
+      - managed-agents/knowledge-wiki/utilities.py#check_run
+      - managed-agents/knowledge-wiki/utilities.py#wiki_lint
+      - managed-agents/knowledge-wiki/utilities.py#usage_by_agent
+    note: >
+      The notebook does not trust the lead's report. It compares against the platform's records,
+      lints the wiki's files, and prices each agent's tokens at list price.
+
+  - title: Ask the wiki
+    focus:
+      - managed-agents/knowledge-wiki/distill_documents_into_knowledge_wiki.ipynb
+    note: >
+      Each question gets a fresh analyst session with the wiki mounted read-only. It reads the top of
+      _index.md, opens only the section it needs, and cites [source | as-of]. A miss says "Not in the
+      wiki". One question is a trap that should be refused.
+
+  - title: Run it yourself
+    focus:
+      - managed-agents/knowledge-wiki/skill.md
+      - managed-agents/knowledge-wiki/requirements.txt
+      - managed-agents/knowledge-wiki/CLAUDE.md
+    note: >
+      pip install, set ANTHROPIC_API_KEY (or ant auth login) and EDGAR_USER_AGENT, run
+      fetch_data_room.py --tier=core, then open the notebook. The core run took about 23 minutes and
+      roughly $16. Or run claude in this folder and ask it to walk you through, which follows skill.md.

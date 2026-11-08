@@ -92,7 +92,12 @@ lens and commit, and explain what you're looking at. They are YAML files in the 
 are in [`.codemap/guides/`](.codemap/guides/): try `?gh=joellithgow95/codemap&guide=architecture-tour`.
 
 For a PR, post a comment containing `<!-- codemap-guide -->` and a fenced `yaml` block and it opens as
-`?guide=pr`, with the commenter's name shown. Nothing is committed. The format is in
+`?guide=pr`, with the commenter's name shown. Nothing is committed.
+
+To walk through a repo you don't own, host a guide on `raw.githubusercontent.com` and add
+`&guideurl=<raw link>` (it opens as `?guide=url`). Example, for Anthropic's knowledge-wiki quickstart:
+[`examples/guides/knowledge-wiki-tour.yaml`](examples/guides/knowledge-wiki-tour.yaml), whose anchors
+only resolve in `anthropics/claude-quickstarts`, so it lives outside `.codemap/guides/` and CI skips it. The format is in
 [`web/src/AGENTS.md`](web/src/AGENTS.md#guides). `node web/scripts/check-guides.mjs .` checks that
 every file, symbol and folder a guide names exists; CI runs it. Guide text is shown as plain text.
 

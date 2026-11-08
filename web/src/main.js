@@ -1474,6 +1474,21 @@ async function loadGuides() {
     const posted = await fetchPullGuide(ghCtx, pull.number)
     if (posted) found.push({ id: 'pr', label: `PR comment by @${posted.author}`, text: posted.text })
   }
+  // ?guideurl= pulls one guide from raw.githubusercontent.com, so a repo you don't own can be walked
+  // through. The CSP only allows that host; it is checked here too so a bad link fails with a reason.
+  const remote = params.get('guideurl')
+  if (remote) {
+    try {
+      const url = new URL(remote)
+      if (url.protocol !== 'https:' || url.hostname !== 'raw.githubusercontent.com') throw new Error('only raw.githubusercontent.com links')
+      const res = await fetch(url, { credentials: 'omit' })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const text = await res.text()
+      found.push({ id: 'url', label: `${url.pathname.split('/').slice(1, 3).join('/')} (guideurl)`, text })
+    } catch (error) {
+      toast(`guideurl: ${error.message}`)
+    }
+  }
   const shas = commits.map((c) => c.sha)
   return found.map((entry) => {
     const { guide, errors, warnings } = parseGuide(entry.text)

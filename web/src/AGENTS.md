@@ -38,7 +38,7 @@ A guide is `.codemap/guides/<name>.yaml` in the repo being mapped (durable, comm
 comment holding the `<!-- codemap-guide -->` marker and a fenced yaml block (ephemeral, newest
 wins, author shown). `main.js` loads them after the map (`initGuides`), shows the GUIDE button
 when there are any, and runs a step with `showStep`: view, lens and commit carry over when a step
-omits them; `folder` and `focus` do not. `?guide=<name>&step=N` opens one (`pr` for the comment).
+omits them; `folder` and `focus` do not. `?guide=<name>&step=N` opens one (`pr` for the comment, `url` for `?guideurl=`, which fetches one guide from `raw.githubusercontent.com` only, the host the CSP already allows).
 
 ```yaml
 version: 1

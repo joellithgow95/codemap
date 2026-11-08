@@ -551,6 +551,34 @@ function rebuildLinks() {
     .forEach((f) => arc(currentPosition(f), from, 0xff2bd6))
 }
 
+// Guide spotlight tags: a small callout over each lit block, so a phone (no hover card) can read
+// what it is without a tap. One per spotlit file; the selected file already has its own label.
+const spotTags = []
+function syncSpotTags(anchors = []) {
+  spotTags.splice(0).forEach((t) => (scene.remove(t.obj), t.el.remove()))
+  const seen = new Set()
+  anchors.forEach((a) => {
+    const { path, symbol } = splitAnchor(a)
+    const file = model.byPath.get(path)
+    if (!file || seen.has(file)) return
+    seen.add(file)
+    const el = document.createElement('div')
+    el.className = 'label spot'
+    const base = file.path.split('/').at(-1)
+    el.textContent = symbol ? `${base}#${symbol}` : base
+    const obj = new CSS2DObject(el)
+    scene.add(obj)
+    spotTags.push({ file, obj, el })
+  })
+}
+function placeSpotTags() {
+  spotTags.forEach(({ file, obj }) => {
+    const p = currentPosition(file)
+    obj.position.set(p.x, p.y + 1.2, p.z)
+    obj.visible = file.exists && file !== state.selected
+  })
+}
+
 function refreshSelection() {
   const file = state.selected
   beam.visible = selLabel.visible = !!file
@@ -839,7 +867,19 @@ function setFocus(path, { frame = true } = {}) {
   state.focus = path
   applyState()
   if (frame) frameView()
+  renderUpButton()
 }
+
+// Phone-only (CSS hides it elsewhere): the map has no Esc or Backspace there, so a visible way out
+// of a focused folder, labelled with where it goes.
+function renderUpButton() {
+  const up = $('up-button')
+  up.hidden = !state.focus
+  if (!state.focus) return
+  const parent = state.focus.includes('/') ? state.focus.slice(0, state.focus.lastIndexOf('/')) : ''
+  up.textContent = `↑ ${parent ? parent.split('/').at(-1) : repoName.split('/').at(-1)}`
+}
+$('up-button').onclick = focusUp
 
 function focusUp() {
   if (!state.focus) return
@@ -1562,6 +1602,7 @@ function closeGuide() {
   guideUi.picker = false
   state.guide = null
   state.spotlight = null
+  syncSpotTags()
   applyState()
   renderGuide()
 }
@@ -1602,9 +1643,11 @@ function showStep(i) {
     $('timeline').value = state.k
   }
   state.focus = step.folder && districtByPath.has(step.folder) ? step.folder : ''
+  renderUpButton()
   if (state.selected) select(null)
   const spot = step.focus.map((a) => model.byPath.get(splitAnchor(a).path)).filter(Boolean)
   state.spotlight = spot.length ? new Set(spot) : null
+  syncSpotTags(step.focus)
   applyState()
   renderGuide()
 
@@ -1826,6 +1869,7 @@ function frame() {
     selLabel.position.set(p.x, p.y + 1.2, p.z)
     beam.material.opacity = 0.4 + 0.4 * Math.sin(time * 3)
   }
+  if (spotTags.length) placeSpotTags()
 
   dust.rotation.y += dt * 0.01
   updateDistricts(ease)

@@ -101,7 +101,7 @@ only resolve in `anthropics/claude-quickstarts`, so it lives outside `.codemap/g
 [`web/src/AGENTS.md`](web/src/AGENTS.md#guides). `node web/scripts/check-guides.mjs .` checks that
 every file, symbol and folder a guide names exists; CI runs it. Guide text is shown as plain text.
 
-When a same-repo PR is opened, `pr-map-link.yml` comments a link to its map.
+When a same-repo PR is opened, `preview.yml` comments a branch preview link that opens its map.
 
 ### Open a local folder
 

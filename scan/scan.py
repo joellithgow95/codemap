@@ -36,8 +36,14 @@ JS_SYMBOL = re.compile(
 
 def git(repo: Path, *args: str) -> str:
     """Return stdout of a git command run in the repo."""
+    # Patches and commit messages can hold non-UTF-8 bytes (e.g. cp1252 VBA source).
     return subprocess.run(
-        ["git", "-C", str(repo), *args], capture_output=True, text=True, check=True
+        ["git", "-C", str(repo), *args],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=True,
     ).stdout
 
 
